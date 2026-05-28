@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import GlassCard from './shared/GlassCard';
 import SectionTitle from './shared/SectionTitle';
 import ScrollReveal from './shared/ScrollReveal';
+
 
 // Team member photos
 import photoImaadh from '../assets/Imaadh Ifthikar.jpg';
@@ -17,29 +16,29 @@ const members = [
     role: 'AI/ML Engineer',
     color: '#38bdf8',
     bio: 'Specializes in on-device LLM deployment and multi-agent system design. Lead architect of the Reasoning layer.',
-    skills: ['llama.cpp', 'Python', 'AI Agents'],
+    skills: ['llama.cpp', 'quantisation', 'Local LLM'],
     github: 'https://github.com/imaadh-ifthi',
     linkedin: 'https://www.linkedin.com/in/imaadh-ifthikar-the-computer-engineer',
     email: '#',
   },
   {
-    name: 'M.S. Rashad',
+    name: 'Rashad Shamil',
     photo: photoRashad,
-    role: 'Audio Signal Processing',
+    role: 'Mobile & Systems Engineer',
     color: '#a855f7',
-    bio: 'Expert in audio ML pipelines, noise suppression, and speaker verification systems using deep learning embeddings.',
-    skills: ['Whisper.cpp', 'RNNoise', 'Resemblyzer'],
+    bio: 'Leads Flutter app development and on-device inference optimization. Architect of the Zero-Egress mobile pipeline and Work with Local LLM.',
+    skills: ['Whisper.cpp', 'App Framework', 'Dart', 'ObjectBox'],
     github: 'https://github.com/RashadShamil',
     linkedin: 'https://www.linkedin.com/in/rashadshamil/',
     email: '#',
   },
   {
-    name: 'K.P.B.P. Karunanayake',
+    name: 'Bhagya Karunanayake',
     photo: photoBhagya,
-    role: 'Mobile & Systems Engineer',
+    role: 'IR & NLP Engineer',
     color: '#06b6d4',
-    bio: 'Leads Flutter app development and on-device inference optimization. Architect of the Zero-Egress mobile pipeline.',
-    skills: ['Flutter', 'ObjectBox', 'Dart'],
+    bio: 'Expert in audio ML pipelines,RAG system, ethical AI frameworks and speaker verification systems using deep learning embeddings.',
+    skills: ['RAG', 'VectorDB', 'LlamaIndex', 'RNNoise'],
     github: 'https://github.com/zerokali20',
     linkedin: 'https://www.linkedin.com/in/bhagya-karunanayake-b52085270',
     email: '#',
@@ -47,10 +46,10 @@ const members = [
   {
     name: 'S. Kishonithan',
     photo: photoKishonithan,
-    role: 'Security & Privacy Researcher',
+    role: 'Defensive ML Engineer',
     color: '#10b981',
-    bio: 'Focuses on threat modeling, ethical AI frameworks, and the Honey-Pot federated intelligence architecture.',
-    skills: ['Security', 'Privacy', 'Federated ML'],
+    bio: 'Focuses on threat modeling,Proposed High-Level Audio Pipeline,noise suppression and the Honey-Pot federated intelligence architecture.',
+    skills: ['audio recognition', 'Privacy', 'Federated ML'],
     github: 'https://github.com/kisho19',
     linkedin: 'https://www.linkedin.com/in/kishonithan-suntharalingam-2444012b7/',
     email: '#',
@@ -112,121 +111,112 @@ function MemberCard({ member, index }) {
 
   return (
     <ScrollReveal delay={index * 0.12}>
-      <motion.div
-        onHoverStart={() => setHovered(true)}
-        onHoverEnd={() => setHovered(false)}
-        style={{ height: '100%' }}
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          padding: '32px 24px',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
+          transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)',
+        }}
       >
-        <GlassCard
-          hover={false}
-          style={{
-            padding: '32px 24px',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            borderColor: hovered ? `${member.color}30` : 'var(--border-glass)',
-            boxShadow: hovered
-              ? `0 8px 40px ${member.color}18, 0 4px 20px rgba(0,0,0,0.4)`
-              : '0 4px 30px rgba(0,0,0,0.35)',
-            transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
-            transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
-          }}
-        >
-          {/* Avatar */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-            {/* Outer glow ring */}
-            <div style={{
-              padding: 3,
-              borderRadius: '50%',
-              background: hovered
-                ? `linear-gradient(135deg, ${member.color}, ${member.color}60)`
-                : `linear-gradient(135deg, ${member.color}50, ${member.color}20)`,
-              boxShadow: hovered ? `0 0 28px ${member.color}60, 0 0 60px ${member.color}25` : 'none',
-              transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
-              marginBottom: 4,
-            }}>
-              <div style={{
-                width: 96, height: 96,
-                borderRadius: '50%',
-                overflow: 'hidden',
-                background: `linear-gradient(135deg, ${member.color}20, #0a0a1a)`,
-                border: '2px solid #030308',
-                position: 'relative',
-              }}>
-                <img
-                  src={member.photo}
-                  alt={member.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'center top',
-                    display: 'block',
-                    filter: hovered ? 'brightness(1.08) saturate(1.1)' : 'brightness(0.95)',
-                    transition: 'filter 0.35s ease, transform 0.4s ease',
-                    transform: hovered ? 'scale(1.05)' : 'scale(1)',
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Name & Role */}
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <h3 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '0.95rem', fontWeight: 700,
-              color: 'var(--text-primary)', marginBottom: 6,
-              letterSpacing: '0.02em',
-            }}>
-              {member.name}
-            </h3>
-            <div style={{
-              fontSize: '0.75rem', fontWeight: 600,
-              color: member.color, letterSpacing: '0.1em',
-              textTransform: 'uppercase', fontFamily: 'var(--font-ui)',
-            }}>
-              {member.role}
-            </div>
-          </div>
-
-          {/* Bio */}
-          <p style={{
-            fontSize: '0.85rem', color: 'var(--text-muted)',
-            lineHeight: 1.7, textAlign: 'center', marginBottom: 20,
-            flexGrow: 1,
-          }}>
-            {member.bio}
-          </p>
-
-          {/* Skills */}
+        {/* Avatar */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
+          {/* Outer glow ring */}
           <div style={{
-            display: 'flex', gap: 6, flexWrap: 'wrap',
-            justifyContent: 'center', marginBottom: 20,
+            padding: 3,
+            borderRadius: '50%',
+            background: hovered
+              ? `linear-gradient(135deg, ${member.color}, ${member.color}60)`
+              : `linear-gradient(135deg, ${member.color}50, ${member.color}20)`,
+            boxShadow: hovered ? `0 0 28px ${member.color}60, 0 0 60px ${member.color}25` : 'none',
+            transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
+            marginBottom: 4,
           }}>
-            {member.skills.map(s => (
-              <span key={s} style={{
-                padding: '3px 10px',
-                borderRadius: 20,
-                fontSize: '0.7rem', fontWeight: 500,
-                background: `${member.color}10`,
-                border: `1px solid ${member.color}20`,
-                color: member.color,
-                fontFamily: 'var(--font-ui)',
-              }}>
-                {s}
-              </span>
-            ))}
+            <div style={{
+              width: 96, height: 96,
+              borderRadius: '50%',
+              overflow: 'hidden',
+              background: `linear-gradient(135deg, ${member.color}20, #0a0a1a)`,
+              border: '2px solid #030308',
+              position: 'relative',
+            }}>
+              <img
+                src={member.photo}
+                alt={member.name}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                  display: 'block',
+                  filter: hovered ? 'brightness(1.08) saturate(1.1)' : 'brightness(0.95)',
+                  transition: 'filter 0.35s ease, transform 0.4s ease',
+                  transform: hovered ? 'scale(1.05)' : 'scale(1)',
+                }}
+              />
+            </div>
           </div>
+        </div>
 
-          {/* Social links */}
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <SocialIcon type="github" href={member.github} />
-            <SocialIcon type="linkedin" href={member.linkedin} />
-            <SocialIcon type="email" href={member.email} />
+        {/* Name & Role */}
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <h3 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '0.95rem', fontWeight: 700,
+            color: 'var(--text-primary)', marginBottom: 6,
+            letterSpacing: '0.02em',
+          }}>
+            {member.name}
+          </h3>
+          <div style={{
+            fontSize: '0.75rem', fontWeight: 600,
+            color: member.color, letterSpacing: '0.1em',
+            textTransform: 'uppercase', fontFamily: 'var(--font-ui)',
+          }}>
+            {member.role}
           </div>
-        </GlassCard>
-      </motion.div>
+        </div>
+
+        {/* Bio */}
+        <p style={{
+          fontSize: '0.85rem', color: 'var(--text-muted)',
+          lineHeight: 1.7, textAlign: 'center', marginBottom: 20,
+          flexGrow: 1,
+        }}>
+          {member.bio}
+        </p>
+
+        {/* Skills */}
+        <div style={{
+          display: 'flex', gap: 6, flexWrap: 'wrap',
+          justifyContent: 'center', marginBottom: 20,
+        }}>
+          {member.skills.map(s => (
+            <span key={s} style={{
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontSize: '0.7rem', fontWeight: 500,
+              background: `${member.color}10`,
+              border: `1px solid ${member.color}20`,
+              color: member.color,
+              fontFamily: 'var(--font-ui)',
+            }}>
+              {s}
+            </span>
+          ))}
+        </div>
+
+        {/* Social links */}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <SocialIcon type="github" href={member.github} />
+          <SocialIcon type="linkedin" href={member.linkedin} />
+          <SocialIcon type="email" href={member.email} />
+        </div>
+      </div>
     </ScrollReveal>
   );
 }
