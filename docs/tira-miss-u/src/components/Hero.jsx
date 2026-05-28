@@ -140,6 +140,10 @@ export default function Hero() {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 600], [0, 120]);
   const opacity = useTransform(scrollY, [0, 400], [1, 0]);
+  // Background logo parallax — moves slower than page scroll (backward into screen)
+  const bgLogoY = useTransform(scrollY, [0, 600], [0, -80]);
+  const bgLogoOpacity = useTransform(scrollY, [0, 500], [0.12, 0]);
+  const bgLogoScale = useTransform(scrollY, [0, 600], [1, 1.18]);
 
   const scrollToSection = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -162,6 +166,27 @@ export default function Hero() {
       {/* Grid background */}
       <div className="grid-bg" style={{ position: 'absolute', inset: 0, opacity: 0.5 }} />
 
+      {/* ── Background Panopticon Logo (parallax, centered, behind everything) ── */}
+      <motion.div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          marginLeft: -260,
+          marginTop: -260,
+          y: bgLogoY,
+          opacity: bgLogoOpacity,
+          scale: bgLogoScale,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+        className="animate-spin-slow"
+      >
+        <div style={{ filter: 'blur(2px)' }}>
+          <PanopticonLogo size={520} />
+        </div>
+      </motion.div>
+
       {/* Atmospheric orbs */}
       <FloatingOrb color="blue" size={600} top="-10%" left="60%" delay={0} />
       <FloatingOrb color="violet" size={500} top="20%" left="-10%" delay={2} />
@@ -169,7 +194,7 @@ export default function Hero() {
 
       {/* Parallax content */}
       <motion.div
-        style={{ y, opacity }}
+        style={{ y, opacity, position: 'relative', zIndex: 1 }}
         className="container"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -187,24 +212,6 @@ export default function Hero() {
 
           </motion.div>
 
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, type: 'spring', stiffness: 120 }}
-            className="animate-float"
-            style={{ position: 'relative' }}
-          >
-            {/* Outer glow ring */}
-            <div style={{
-              position: 'absolute',
-              inset: -20,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%)',
-              animation: 'pulse-glow 3s ease-in-out infinite',
-            }} />
-            <PanopticonLogo size={160} />
-          </motion.div>
 
           {/* Title */}
           <motion.div
@@ -323,46 +330,7 @@ export default function Hero() {
         </div>
       </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        style={{
-          position: 'absolute',
-          bottom: 40,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 8,
-          cursor: 'pointer',
-        }}
-        onClick={() => scrollToSection('about')}
-      >
-        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          Scroll
-        </span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          style={{
-            width: 24, height: 40,
-            border: '1.5px solid rgba(56,189,248,0.3)',
-            borderRadius: 12,
-            display: 'flex',
-            justifyContent: 'center',
-            paddingTop: 6,
-          }}
-        >
-          <motion.div
-            animate={{ y: [0, 10, 0], opacity: [1, 0, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            style={{ width: 4, height: 8, background: 'var(--accent-blue)', borderRadius: 2 }}
-          />
-        </motion.div>
-      </motion.div>
+
 
       <style>{`
         @keyframes shimmer {
