@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
 import '../widgets/logo.dart';
 
 /// Auth screen — Face ID button + 6-digit PIN pad.
@@ -51,7 +50,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   Text(
                     'Panopticon',
                     style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       letterSpacing: -0.3,
@@ -76,7 +75,7 @@ class _AuthScreenState extends State<AuthScreen> {
               Text(
                 'Alex.',
                 style: GoogleFonts.inter(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 28,
                   fontWeight: FontWeight.w500,
                   letterSpacing: -0.5,
@@ -86,7 +85,7 @@ class _AuthScreenState extends State<AuthScreen> {
               Text(
                 'Sign in to continue. Your data never leaves this device.',
                 style: GoogleFonts.inter(
-                  color: Colors.white.withOpacity(0.45),
+                  color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 14,
                   height: 1.6,
                 ),
@@ -104,14 +103,14 @@ class _AuthScreenState extends State<AuthScreen> {
                       height: 64,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        color: Colors.white.withOpacity(0.05),
+                        color: Colors.white.withValues(alpha: 0.05),
                         border: Border.all(
-                            color: Colors.white.withOpacity(0.08)),
+                            color: Colors.white.withValues(alpha: 0.08)),
                       ),
                       child: Icon(
                         Icons.face_retouching_natural_rounded,
                         size: 28,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -130,7 +129,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         Text(
                           'Recommended sign-in',
                           style: GoogleFonts.inter(
-                            color: Colors.white.withOpacity(0.40),
+                            color: Colors.white.withValues(alpha: 0.40),
                             fontSize: 12,
                           ),
                         ),
@@ -146,7 +145,7 @@ class _AuthScreenState extends State<AuthScreen> {
               Text(
                 'Or enter your PIN',
                 style: GoogleFonts.inter(
-                  color: Colors.white.withOpacity(0.40),
+                  color: Colors.white.withValues(alpha: 0.40),
                   fontSize: 12,
                 ),
               ),
@@ -163,12 +162,12 @@ class _AuthScreenState extends State<AuthScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: filled
-                            ? Colors.white.withOpacity(0.08)
-                            : Colors.white.withOpacity(0.02),
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.white.withValues(alpha: 0.02),
                         border: Border.all(
                           color: filled
-                              ? Colors.white.withOpacity(0.20)
-                              : Colors.white.withOpacity(0.06),
+                              ? Colors.white.withValues(alpha: 0.20)
+                              : Colors.white.withValues(alpha: 0.06),
                         ),
                       ),
                       child: filled
@@ -178,7 +177,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 height: 8,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                 ),
                               ),
                             )
@@ -213,7 +212,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: Text(
                           k,
                           style: GoogleFonts.inter(
-                            color: Colors.white.withOpacity(0.80),
+                            color: Colors.white.withValues(alpha: 0.80),
                             fontSize: 18,
                             fontWeight: FontWeight.w300,
                           ),
@@ -231,12 +230,12 @@ class _AuthScreenState extends State<AuthScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.shield_outlined,
-                      size: 14, color: Colors.white.withOpacity(0.35)),
+                      size: 14, color: Colors.white.withValues(alpha: 0.35)),
                   const SizedBox(width: 6),
                   Text(
                     'Zero-egress · 100% on-device',
                     style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.35),
+                      color: Colors.white.withValues(alpha: 0.35),
                       fontSize: 11,
                     ),
                   ),

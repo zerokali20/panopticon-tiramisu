@@ -1,30 +1,39 @@
-// This is a basic Flutter widget test.
+// ============================================================
+// test/widget_test.dart
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Smoke test — verifies the AuthScreen mounts without crashing.
+//
+// The full app (PanopticonApp) requires ObjectBox + SQLite to be
+// initialised asynchronously before runApp(), so it is not
+// directly testable with pumpWidget.  This test exercises the
+// first widget the user ever sees — the AuthScreen — in isolation.
+// ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:panopticon/main.dart';
+import 'package:panopticon/screens/auth_screen.dart';
+import 'package:panopticon/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('AuthScreen mounts without error', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: const ColorScheme.dark(
+            surface: AppColors.background,
+            primary: Colors.white,
+          ),
+          scaffoldBackgroundColor: AppColors.background,
+          textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        ),
+        home: AuthScreen(onUnlock: () {}),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Auth screen should appear — it is the entry point before login.
+    expect(find.byType(AuthScreen), findsOneWidget);
   });
 }

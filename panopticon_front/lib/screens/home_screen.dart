@@ -30,7 +30,7 @@ class HomeScreen extends StatelessWidget {
                   Text(
                     'Tuesday, May 27',
                     style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.40),
+                      color: Colors.white.withValues(alpha: 0.40),
                       fontSize: 12,
                     ),
                   ),
@@ -46,7 +46,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              _IconBtn(icon: Icons.search_rounded),
+              const _IconBtn(icon: Icons.search_rounded),
             ],
           ),
         ),
@@ -71,7 +71,7 @@ class HomeScreen extends StatelessWidget {
                           fontWeight: FontWeight.w500)),
                   Text('See all',
                       style: GoogleFonts.inter(
-                          color: Colors.white.withOpacity(0.40),
+                          color: Colors.white.withValues(alpha: 0.40),
                           fontSize: 12)),
                 ],
               ),
@@ -80,10 +80,10 @@ class HomeScreen extends StatelessWidget {
               // Calls list
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.02),
+                  color: Colors.white.withValues(alpha: 0.02),
                   borderRadius: BorderRadius.circular(16),
                   border:
-                      Border.all(color: Colors.white.withOpacity(0.05)),
+                      Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
                 child: Column(
                   children: List.generate(recentCalls.length, (i) {
@@ -95,7 +95,7 @@ class HomeScreen extends StatelessWidget {
                         if (!isLast)
                           Divider(
                               height: 1,
-                              color: Colors.white.withOpacity(0.04),
+                              color: Colors.white.withValues(alpha: 0.04),
                               indent: 16,
                               endIndent: 16),
                       ],
@@ -109,7 +109,7 @@ class HomeScreen extends StatelessWidget {
                 child: Text(
                   'End of activity · Updated just now',
                   style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.35),
+                      color: Colors.white.withValues(alpha: 0.35),
                       fontSize: 11),
                 ),
               ),
@@ -130,9 +130,9 @@ class _StatusCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
@@ -157,7 +157,7 @@ class _StatusCard extends StatelessWidget {
                         Text(
                           'Active & monitoring',
                           style: GoogleFonts.inter(
-                            color: AppColors.emerald.withOpacity(0.9),
+                            color: AppColors.emerald.withValues(alpha: 0.9),
                             fontSize: 11,
                           ),
                         ),
@@ -180,14 +180,14 @@ class _StatusCard extends StatelessWidget {
                         Text(
                           'View privacy center',
                           style: GoogleFonts.inter(
-                            color: Colors.white.withOpacity(0.70),
+                            color: Colors.white.withValues(alpha: 0.70),
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(width: 4),
                         Icon(Icons.chevron_right_rounded,
                             size: 14,
-                            color: Colors.white.withOpacity(0.70)),
+                            color: Colors.white.withValues(alpha: 0.70)),
                       ],
                     ),
                   ],
@@ -197,9 +197,9 @@ class _StatusCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Divider(height: 1, color: Colors.white.withOpacity(0.06)),
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
           const SizedBox(height: 16),
-          Row(
+          const Row(
             children: [
               _Stat(value: '47', label: 'Blocked'),
               _Stat(value: '312', label: 'Analyzed'),
@@ -229,7 +229,7 @@ class _StatusCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Icon(Icons.chevron_right_rounded,
+                  const Icon(Icons.chevron_right_rounded,
                       size: 16, color: AppColors.background),
                 ],
               ),
@@ -265,7 +265,7 @@ class _Stat extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.inter(
-              color: Colors.white.withOpacity(0.40),
+              color: Colors.white.withValues(alpha: 0.40),
               fontSize: 10,
             ),
           ),
@@ -304,7 +304,7 @@ class _RecentCallRow extends StatelessWidget {
                 Text(
                   call.sub ?? '',
                   style: GoogleFonts.inter(
-                    color: Colors.white.withOpacity(0.40),
+                    color: Colors.white.withValues(alpha: 0.40),
                     fontSize: 11.5,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -316,7 +316,7 @@ class _RecentCallRow extends StatelessWidget {
           Text(
             call.time,
             style: GoogleFonts.inter(
-              color: Colors.white.withOpacity(0.35),
+              color: Colors.white.withValues(alpha: 0.35),
               fontSize: 11,
               fontFeatures: [const FontFeature.tabularFigures()],
             ),
@@ -338,10 +338,10 @@ class _IconBtn extends StatelessWidget {
       height: 40,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.05),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        color: Colors.white.withValues(alpha: 0.05),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
-      child: Icon(icon, size: 16, color: Colors.white.withOpacity(0.60)),
+      child: Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.60)),
     );
   }
 }

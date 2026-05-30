@@ -14,12 +14,12 @@ class LogoPainter extends CustomPainter {
     final r = size.width / 2;
 
     final strokeOuter = Paint()
-      ..color = color.withOpacity(0.3)
+      ..color = color.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 
     final strokeOrbit = Paint()
-      ..color = color.withOpacity(0.6)
+      ..color = color.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 

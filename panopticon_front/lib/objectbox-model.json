@@ -1,0 +1,79 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:1375226805240877433",
+      "lastPropertyId": "10:2242935523644388237",
+      "name": "DocumentChunk",
+      "properties": [
+        {
+          "id": "1:972273122319329953",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3119376038009702867",
+          "name": "sourceDocumentId",
+          "type": 9
+        },
+        {
+          "id": "3:8993238510852400610",
+          "name": "sourceType",
+          "type": 6
+        },
+        {
+          "id": "4:7710712493273757491",
+          "name": "sourceTitle",
+          "type": 9
+        },
+        {
+          "id": "5:4332801651708320111",
+          "name": "textContent",
+          "type": 9
+        },
+        {
+          "id": "6:7941269056768563021",
+          "name": "chunkIndex",
+          "type": 6
+        },
+        {
+          "id": "7:4996274118227918974",
+          "name": "totalChunks",
+          "type": 6
+        },
+        {
+          "id": "8:429832700582528760",
+          "name": "embedding",
+          "indexId": "1:2007474181640120730",
+          "type": 28,
+          "flags": 8
+        },
+        {
+          "id": "9:1778164972234610759",
+          "name": "ingestionTimestampMs",
+          "type": 6
+        },
+        {
+          "id": "10:2242935523644388237",
+          "name": "metadataJson",
+          "type": 9
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "1:1375226805240877433",
+  "lastIndexId": "1:2007474181640120730",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}

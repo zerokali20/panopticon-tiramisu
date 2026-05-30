@@ -58,7 +58,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
               SizedBox(height: top + 80),
               Text('On call · 02:18',
                   style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.40), fontSize: 11)),
+                      color: Colors.white.withValues(alpha: 0.40), fontSize: 11)),
               const SizedBox(height: 12),
               Text('+1 (415) 555-0117',
                   style: GoogleFonts.inter(
@@ -69,18 +69,18 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
               const SizedBox(height: 4),
               Text('San Francisco, CA',
                   style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.35), fontSize: 12)),
+                      color: Colors.white.withValues(alpha: 0.35), fontSize: 12)),
               const SizedBox(height: 40),
               Container(
                 width: 112,
                 height: 112,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.04),
-                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  color: Colors.white.withValues(alpha: 0.04),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 child: Icon(Icons.person_outline_rounded,
-                    size: 48, color: Colors.white.withOpacity(0.30)),
+                    size: 48, color: Colors.white.withValues(alpha: 0.30)),
               ),
               const Spacer(),
               Padding(
@@ -97,15 +97,15 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                             height: 56,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.04),
+                              color: Colors.white.withValues(alpha: 0.04),
                               border: Border.all(
-                                  color: Colors.white.withOpacity(0.05)),
+                                  color: Colors.white.withValues(alpha: 0.05)),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(l,
                               style: GoogleFonts.inter(
-                                  color: Colors.white.withOpacity(0.40),
+                                  color: Colors.white.withValues(alpha: 0.40),
                                   fontSize: 11)),
                         ],
                       ),
@@ -135,17 +135,17 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: Colors.white.withOpacity(0.08)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
               child: Row(
                 children: [
                   Icon(Icons.chevron_left_rounded,
-                      size: 14, color: Colors.white.withOpacity(0.70)),
+                      size: 14, color: Colors.white.withValues(alpha: 0.70)),
                   Text('Back',
                       style: GoogleFonts.inter(
-                          color: Colors.white.withOpacity(0.70),
+                          color: Colors.white.withValues(alpha: 0.70),
                           fontSize: 11)),
                 ],
               ),
@@ -160,9 +160,9 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
           child: Container(
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
+              color: Colors.white.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: Row(
               children: [
@@ -206,7 +206,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                     onHoneyToggle: (v) => setState(() => _honey = v),
                     onHangup: widget.onBack,
                   )
-                : _LowRiskCard(key: const ValueKey('low')),
+                : const _LowRiskCard(key: ValueKey('low')),
           ),
         ),
       ],
@@ -237,7 +237,7 @@ class _ModeChip extends StatelessWidget {
           label,
           style: GoogleFonts.inter(
             color:
-                active ? AppColors.background : Colors.white.withOpacity(0.60),
+                active ? AppColors.background : Colors.white.withValues(alpha: 0.60),
             fontSize: 10,
             fontWeight: FontWeight.w500,
           ),
@@ -261,10 +261,10 @@ class _LowRiskCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xD915182A),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.07)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
               blurRadius: 50,
               offset: const Offset(0, 20),
             ),
@@ -288,14 +288,14 @@ class _LowRiskCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text('Checking local context · 4 of 7 signals',
                           style: GoogleFonts.inter(
-                              color: Colors.white.withOpacity(0.45),
+                              color: Colors.white.withValues(alpha: 0.45),
                               fontSize: 11)),
                     ],
                   ),
                 ),
                 Text('62%',
                     style: GoogleFonts.inter(
-                        color: AppColors.amber.withOpacity(0.90),
+                        color: AppColors.amber.withValues(alpha: 0.90),
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         fontFeatures: [const FontFeature.tabularFigures()])),
@@ -312,9 +312,9 @@ class _LowRiskCard extends StatelessWidget {
                 builder: (context, v, _) => LinearProgressIndicator(
                   value: v,
                   minHeight: 3,
-                  backgroundColor: Colors.white.withOpacity(0.06),
+                  backgroundColor: Colors.white.withValues(alpha: 0.06),
                   valueColor: AlwaysStoppedAnimation(
-                      AppColors.amber.withOpacity(0.80)),
+                      AppColors.amber.withValues(alpha: 0.80)),
                 ),
               ),
             ),
@@ -378,7 +378,7 @@ class _WaveformBarsState extends State<_WaveformBars>
               width: 2,
               margin: const EdgeInsets.symmetric(horizontal: 0.5),
               decoration: BoxDecoration(
-                color: AppColors.amber.withOpacity(0.80),
+                color: AppColors.amber.withValues(alpha: 0.80),
                 borderRadius: BorderRadius.circular(1),
               ),
               height: 20 * _anims[i].value,
@@ -430,10 +430,10 @@ class _HighRiskCard extends StatelessWidget {
           colors: [Color(0xF22A1218), Color(0xF21A0A10)],
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border.all(color: AppColors.riskHigh.withOpacity(0.10)),
+        border: Border.all(color: AppColors.riskHigh.withValues(alpha: 0.10)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 60,
             offset: const Offset(0, -20),
           ),
@@ -453,7 +453,7 @@ class _HighRiskCard extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -467,9 +467,9 @@ class _HighRiskCard extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.riskHigh.withOpacity(0.15),
+                      color: AppColors.riskHigh.withValues(alpha: 0.15),
                       border: Border.all(
-                          color: AppColors.riskHigh.withOpacity(0.20)),
+                          color: AppColors.riskHigh.withValues(alpha: 0.20)),
                     ),
                     child: const Icon(Icons.warning_amber_rounded,
                         size: 16, color: Color(0xFFFECACA)),
@@ -486,7 +486,7 @@ class _HighRiskCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text('Confidence 98% · Likely impersonation',
                           style: GoogleFonts.inter(
-                              color: Colors.white.withOpacity(0.50),
+                              color: Colors.white.withValues(alpha: 0.50),
                               fontSize: 11.5)),
                     ],
                   ),
@@ -499,16 +499,16 @@ class _HighRiskCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Why we flagged this',
                         style: GoogleFonts.inter(
-                            color: Colors.white.withOpacity(0.45),
+                            color: Colors.white.withValues(alpha: 0.45),
                             fontSize: 11)),
                     const SizedBox(height: 10),
                     ..._reasons.map((r) => Padding(
@@ -523,7 +523,7 @@ class _HighRiskCard extends StatelessWidget {
                                   height: 4,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: AppColors.riskHigh.withOpacity(0.80),
+                                    color: AppColors.riskHigh.withValues(alpha: 0.80),
                                   ),
                                 ),
                               ),
@@ -531,7 +531,7 @@ class _HighRiskCard extends StatelessWidget {
                               Expanded(
                                 child: Text(r,
                                     style: GoogleFonts.inter(
-                                        color: Colors.white.withOpacity(0.80),
+                                        color: Colors.white.withValues(alpha: 0.80),
                                         fontSize: 12.5,
                                         height: 1.5)),
                               ),
@@ -547,9 +547,9 @@ class _HighRiskCard extends StatelessWidget {
               // Counter-script accordion
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.03),
+                  color: Colors.white.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 child: Column(
                   children: [
@@ -573,7 +573,7 @@ class _HighRiskCard extends StatelessWidget {
                                   const SizedBox(height: 2),
                                   Text('A short counter-script',
                                       style: GoogleFonts.inter(
-                                          color: Colors.white.withOpacity(0.45),
+                                          color: Colors.white.withValues(alpha: 0.45),
                                           fontSize: 11)),
                                 ],
                               ),
@@ -583,7 +583,7 @@ class _HighRiskCard extends StatelessWidget {
                               duration: const Duration(milliseconds: 200),
                               child: Icon(Icons.keyboard_arrow_down_rounded,
                                   size: 16,
-                                  color: Colors.white.withOpacity(0.50)),
+                                  color: Colors.white.withValues(alpha: 0.50)),
                             ),
                           ],
                         ),
@@ -596,7 +596,7 @@ class _HighRiskCard extends StatelessWidget {
                         children: [
                           Divider(
                               height: 1,
-                              color: Colors.white.withOpacity(0.05)),
+                              color: Colors.white.withValues(alpha: 0.05)),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                             child: Column(
@@ -608,7 +608,7 @@ class _HighRiskCard extends StatelessWidget {
                                         child: Text(q,
                                             style: GoogleFonts.inter(
                                                 color: Colors.white
-                                                    .withOpacity(0.80),
+                                                    .withValues(alpha: 0.80),
                                                 fontSize: 12.5,
                                                 height: 1.5)),
                                       ))
@@ -633,9 +633,9 @@ class _HighRiskCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.03),
+                  color: Colors.white.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 child: Row(
                   children: [
@@ -651,7 +651,7 @@ class _HighRiskCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text('Stall the caller with synthetic voice',
                               style: GoogleFonts.inter(
-                                  color: Colors.white.withOpacity(0.45),
+                                  color: Colors.white.withValues(alpha: 0.45),
                                   fontSize: 11)),
                         ],
                       ),
