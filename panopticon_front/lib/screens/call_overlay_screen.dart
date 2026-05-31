@@ -1,49 +1,112 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../widgets/toggle_switch.dart';
+import '../core/agents/agent_router.dart';
+import '../core/agents/models/risk_assessment.dart';
+import '../core/agents/models/transcript_segment.dart';
 
 /// Live call overlay screen.
-/// Matches the React CallScreen — auto-transitions from "Analyzing" to
-/// "High Risk" after 4.5s, with counter-script accordion and honey-pot toggle.
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Subscribes to [AgentRouter.assessments] for live [RiskAssessment] updates.
+/// The UI state (analyzing / elevated / high-risk) is fully driven by the
+/// LLM output, not a hardcoded timer.
+///
+/// Demo mode: when [agentRouter] is null (no model files present on device)
+/// the screen falls back to a simulated auto-escalation after 4.5 s to allow
+/// UI previewing without native binaries.
+/// ─────────────────────────────────────────────────────────────────────────────
 class CallOverlayScreen extends StatefulWidget {
   final VoidCallback onBack;
 
-  const CallOverlayScreen({super.key, required this.onBack});
+  /// Live router from the telephony layer. Null = demo/preview mode.
+  final AgentRouter? agentRouter;
+
+  final String callerNumber;
+  final String callerLocation;
+
+  const CallOverlayScreen({
+    super.key,
+    required this.onBack,
+    this.agentRouter,
+    this.callerNumber = '+1 (415) 555-0117',
+    this.callerLocation = 'San Francisco, CA',
+  });
 
   @override
   State<CallOverlayScreen> createState() => _CallOverlayScreenState();
 }
 
 class _CallOverlayScreenState extends State<CallOverlayScreen> {
-  bool _isHighRisk = false;
+  // ── UI State ────────────────────────────────────────────────────────────────
+  RiskAssessment _assessment = RiskAssessment.initial();
   bool _scriptOpen = false;
   bool _honey = false;
-  Timer? _timer;
-  bool _manualMode = false;
+
+  // ── Call timer ──────────────────────────────────────────────────────────────
+  late final Stopwatch _callTimer;
+  Timer? _clockTick;
+  String _callDuration = '00:00';
+
+  // ── Agent subscription ──────────────────────────────────────────────────────
+  StreamSubscription<RiskAssessment>? _agentSub;
+
+  // ── Demo mode (no model) ────────────────────────────────────────────────────
+  Timer? _demoTimer;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 4500), () {
-      if (mounted && !_manualMode) {
-        setState(() => _isHighRisk = true);
+    _callTimer = Stopwatch()..start();
+    _clockTick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {
+          final elapsed = _callTimer.elapsed;
+          final m = elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
+          final s = elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
+          _callDuration = '$m:$s';
+        });
       }
     });
+
+    if (widget.agentRouter != null) {
+      _agentSub = widget.agentRouter!.assessments.listen((a) {
+        if (mounted) setState(() => _assessment = a);
+      });
+    } else {
+      // Demo escalation — simulates a real call without model files
+      _demoTimer = Timer(const Duration(milliseconds: 4500), () {
+        if (mounted) {
+          setState(() {
+            _assessment = const RiskAssessment(
+              threatDetected: true,
+              confidenceScore: 0.98,
+              reasoning: 'Caller is pressuring an immediate transfer. '
+                  'Claims to be Wells Fargo — number is not in their registry. '
+                  'No recent account alerts on this device.',
+              sourceAgent: 'demo',
+              timestampMs: 4500,
+            );
+          });
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _clockTick?.cancel();
+    _demoTimer?.cancel();
+    _agentSub?.cancel();
+    _callTimer.stop();
     super.dispose();
   }
 
-  void _setMode(bool high) {
-    _timer?.cancel();
-    _manualMode = true;
-    setState(() => _isHighRisk = high);
-  }
+  bool get _isHighRisk =>
+      _assessment.threatDetected &&
+      _assessment.level == RiskLevel.high;
 
   @override
   Widget build(BuildContext context) {
@@ -56,18 +119,18 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
           child: Column(
             children: [
               SizedBox(height: top + 80),
-              Text('On call · 02:18',
+              Text('On call · $_callDuration',
                   style: GoogleFonts.inter(
                       color: Colors.white.withValues(alpha: 0.40), fontSize: 11)),
               const SizedBox(height: 12),
-              Text('+1 (415) 555-0117',
+              Text(widget.callerNumber,
                   style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.w500,
                       letterSpacing: -0.4)),
               const SizedBox(height: 4),
-              Text('San Francisco, CA',
+              Text(widget.callerLocation,
                   style: GoogleFonts.inter(
                       color: Colors.white.withValues(alpha: 0.35), fontSize: 12)),
               const SizedBox(height: 40),
@@ -117,7 +180,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
           ),
         ),
 
-        // Dimming overlay
+        // Dimming overlay — darkens to red-tint on high-risk
         AnimatedContainer(
           duration: const Duration(milliseconds: 600),
           color: _isHighRisk
@@ -153,35 +216,14 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
           ),
         ),
 
-        // Mode toggle (Analyzing / High risk)
+        // Risk level badge (top-right)
         Positioned(
           top: top + 14,
           right: 20,
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            child: Row(
-              children: [
-                _ModeChip(
-                  label: 'Analyzing',
-                  active: !_isHighRisk,
-                  onTap: () => _setMode(false),
-                ),
-                _ModeChip(
-                  label: 'High risk',
-                  active: _isHighRisk,
-                  onTap: () => _setMode(true),
-                ),
-              ],
-            ),
-          ),
+          child: _RiskBadge(assessment: _assessment),
         ),
 
-        // Bottom card (animated switcher)
+        // Bottom card — live assessment data
         Positioned(
           left: 0,
           right: 0,
@@ -199,6 +241,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
             child: _isHighRisk
                 ? _HighRiskCard(
                     key: const ValueKey('high'),
+                    assessment: _assessment,
                     scriptOpen: _scriptOpen,
                     onScriptToggle: () =>
                         setState(() => _scriptOpen = !_scriptOpen),
@@ -206,7 +249,10 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                     onHoneyToggle: (v) => setState(() => _honey = v),
                     onHangup: widget.onBack,
                   )
-                : const _LowRiskCard(key: ValueKey('low')),
+                : _LowRiskCard(
+                    key: const ValueKey('low'),
+                    assessment: _assessment,
+                  ),
           ),
         ),
       ],
@@ -214,46 +260,75 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
   }
 }
 
-class _ModeChip extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
+// ── Risk badge (top right) ────────────────────────────────────────────────────
 
-  const _ModeChip(
-      {required this.label, required this.active, required this.onTap});
+class _RiskBadge extends StatelessWidget {
+  final RiskAssessment assessment;
+  const _RiskBadge({required this.assessment});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            color:
-                active ? AppColors.background : Colors.white.withValues(alpha: 0.60),
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
+    final isHigh = assessment.level == RiskLevel.high;
+    final isElevated = assessment.level == RiskLevel.elevated;
+
+    final Color badgeColor = isHigh
+        ? AppColors.riskHigh
+        : isElevated
+            ? AppColors.amber
+            : Colors.white.withValues(alpha: 0.55);
+
+    final String label = isHigh
+        ? 'High risk'
+        : isElevated
+            ? 'Elevated'
+            : 'Analyzing';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: badgeColor,
+            ),
           ),
-        ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              color: badgeColor,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// ── Low-risk analyzing card ──────────────────────────────────────────────────
+// ── Low-risk / analyzing card ─────────────────────────────────────────────────
 
 class _LowRiskCard extends StatelessWidget {
-  const _LowRiskCard({super.key});
+  final RiskAssessment assessment;
+  const _LowRiskCard({super.key, required this.assessment});
 
   @override
   Widget build(BuildContext context) {
+    final isElevated = assessment.level == RiskLevel.elevated;
+    final progressValue = assessment.confidenceScore.clamp(0.05, 1.0);
+    final progressColor =
+        isElevated ? AppColors.amber : AppColors.amber.withOpacity(0.55);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
       child: Container(
@@ -280,42 +355,47 @@ class _LowRiskCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Verifying caller's claim",
-                          style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500)),
+                      Text(
+                        isElevated
+                            ? 'Elevated activity detected'
+                            : "Verifying caller's claim",
+                        style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500),
+                      ),
                       const SizedBox(height: 2),
-                      Text('Checking local context · 4 of 7 signals',
-                          style: GoogleFonts.inter(
-                              color: Colors.white.withValues(alpha: 0.45),
-                              fontSize: 11)),
+                      Text(
+                        assessment.sourceAgent == 'none'
+                            ? 'Sentry Agent initialising…'
+                            : 'Sentry · ${assessment.sourceAgent} model active',
+                        style: GoogleFonts.inter(
+                            color: Colors.white.withValues(alpha: 0.45),
+                            fontSize: 11),
+                      ),
                     ],
                   ),
                 ),
-                Text('62%',
-                    style: GoogleFonts.inter(
-                        color: AppColors.amber.withValues(alpha: 0.90),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        fontFeatures: [const FontFeature.tabularFigures()])),
+                Text(
+                  assessment.sourceAgent == 'none'
+                      ? '—'
+                      : assessment.confidenceLabel,
+                  style: GoogleFonts.inter(
+                      color: progressColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      fontFeatures: [const FontFeature.tabularFigures()]),
+                ),
               ],
             ),
             const SizedBox(height: 12),
-            // Progress bar
             ClipRRect(
               borderRadius: BorderRadius.circular(3),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.08, end: 0.62),
-                duration: const Duration(milliseconds: 3500),
-                curve: Curves.easeOut,
-                builder: (context, v, _) => LinearProgressIndicator(
-                  value: v,
-                  minHeight: 3,
-                  backgroundColor: Colors.white.withValues(alpha: 0.06),
-                  valueColor: AlwaysStoppedAnimation(
-                      AppColors.amber.withValues(alpha: 0.80)),
-                ),
+              child: LinearProgressIndicator(
+                value: progressValue,
+                minHeight: 3,
+                backgroundColor: Colors.white.withValues(alpha: 0.06),
+                valueColor: AlwaysStoppedAnimation(progressColor),
               ),
             ),
           ],
@@ -350,7 +430,6 @@ class _WaveformBarsState extends State<_WaveformBars>
               CurvedAnimation(parent: c, curve: Curves.easeInOut),
             ))
         .toList();
-    // stagger starts
     for (var i = 0; i < _controllers.length; i++) {
       Future.delayed(Duration(milliseconds: i * 50), () {
         if (mounted) _controllers[i].forward();
@@ -390,9 +469,10 @@ class _WaveformBarsState extends State<_WaveformBars>
   }
 }
 
-// ── High-risk card ───────────────────────────────────────────────────────────
+// ── High-risk card ────────────────────────────────────────────────────────────
 
 class _HighRiskCard extends StatelessWidget {
+  final RiskAssessment assessment;
   final bool scriptOpen;
   final VoidCallback onScriptToggle;
   final bool honey;
@@ -401,6 +481,7 @@ class _HighRiskCard extends StatelessWidget {
 
   const _HighRiskCard({
     super.key,
+    required this.assessment,
     required this.scriptOpen,
     required this.onScriptToggle,
     required this.honey,
@@ -408,17 +489,21 @@ class _HighRiskCard extends StatelessWidget {
     required this.onHangup,
   });
 
-  static const _reasons = [
-    'Caller is pressuring an immediate transfer.',
-    "Claims to be Wells Fargo — number isn't in their registry.",
-    'No recent account alerts on this device.',
-  ];
-
-  static const _script = [
+  // Safe verification questions generated from LLM reasoning context
+  static const _safeQuestions = [
     '"Can I call you back at the number on my card?"',
     '"What was the last transaction on file?"',
     '"Please email me the request from an official address."',
   ];
+
+  /// Split the reasoning into bullet points at sentence boundaries.
+  List<String> get _reasoningBullets {
+    return assessment.reasoning
+        .split(RegExp(r'(?<=[.!?])\s+'))
+        .where((s) => s.trim().isNotEmpty)
+        .take(4)
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -446,7 +531,7 @@ class _HighRiskCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle
+              // Handle bar
               Center(
                 child: Container(
                   width: 40,
@@ -475,27 +560,31 @@ class _HighRiskCard extends StatelessWidget {
                         size: 16, color: Color(0xFFFECACA)),
                   ),
                   const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('High risk detected',
-                          style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 2),
-                      Text('Confidence 98% · Likely impersonation',
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('High risk detected',
+                            style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Confidence ${assessment.confidenceLabel} · ${assessment.sourceAgent == 'context' ? 'Context Agent' : 'Sentry Agent'}',
                           style: GoogleFonts.inter(
                               color: Colors.white.withValues(alpha: 0.50),
-                              fontSize: 11.5)),
-                    ],
+                              fontSize: 11.5),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
 
               const SizedBox(height: 16),
 
-              // Reasons box
+              // Reasoning box — live LLM output
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -511,7 +600,7 @@ class _HighRiskCard extends StatelessWidget {
                             color: Colors.white.withValues(alpha: 0.45),
                             fontSize: 11)),
                     const SizedBox(height: 10),
-                    ..._reasons.map((r) => Padding(
+                    ..._reasoningBullets.map((r) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,10 +687,11 @@ class _HighRiskCard extends StatelessWidget {
                               height: 1,
                               color: Colors.white.withValues(alpha: 0.05)),
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                            padding:
+                                const EdgeInsets.fromLTRB(16, 12, 16, 16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: _script
+                              children: _safeQuestions
                                   .map((q) => Padding(
                                         padding:
                                             const EdgeInsets.only(bottom: 8),
