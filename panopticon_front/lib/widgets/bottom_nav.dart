@@ -29,8 +29,8 @@ class BottomNav extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.background.withOpacity(0),
-            AppColors.background.withOpacity(0.92),
+            AppColors.background.withValues(alpha: 0),
+            AppColors.background.withValues(alpha: 0.92),
             AppColors.background,
           ],
           stops: const [0.0, 0.35, 1.0],
@@ -45,9 +45,9 @@ class BottomNav extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.04),
+          color: Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: Colors.white.withOpacity(0.06)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -77,7 +77,7 @@ class BottomNav extends StatelessWidget {
                       size: 16,
                       color: isActive
                           ? AppColors.background
-                          : Colors.white.withOpacity(0.5),
+                          : Colors.white.withValues(alpha: 0.5),
                     ),
                     AnimatedSize(
                       duration: const Duration(milliseconds: 220),

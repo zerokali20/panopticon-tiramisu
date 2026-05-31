@@ -16,12 +16,12 @@ class AppColors {
 
   // Text
   static const Color textPrimary = Colors.white;
-  static Color textSecondary = Colors.white.withOpacity(0.45);
-  static Color textMuted = Colors.white.withOpacity(0.30);
+  static Color textSecondary = Colors.white.withValues(alpha: 0.45);
+  static Color textMuted = Colors.white.withValues(alpha: 0.30);
 
   // Borders / dividers
-  static Color border = Colors.white.withOpacity(0.06);
-  static Color divider = Colors.white.withOpacity(0.04);
+  static Color border = Colors.white.withValues(alpha: 0.06);
+  static Color divider = Colors.white.withValues(alpha: 0.04);
 
   // Risk colours
   static const Color riskHigh = Color(0xFFFB7185);   // rose-400
@@ -33,10 +33,10 @@ class AppColors {
   static const Color dangerSurface = Color(0xFF1A0A10);
 
   // Overlays
-  static Color white04 = Colors.white.withOpacity(0.04);
-  static Color white06 = Colors.white.withOpacity(0.06);
-  static Color white08 = Colors.white.withOpacity(0.08);
-  static Color white15 = Colors.white.withOpacity(0.15);
+  static Color white04 = Colors.white.withValues(alpha: 0.04);
+  static Color white06 = Colors.white.withValues(alpha: 0.06);
+  static Color white08 = Colors.white.withValues(alpha: 0.08);
+  static Color white15 = Colors.white.withValues(alpha: 0.15);
 
   // Utility
   static const Color rose = Color(0xFFF43F5E);

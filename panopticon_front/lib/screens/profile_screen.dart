@@ -36,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Text('Profile',
                   style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.40), fontSize: 12)),
+                      color: Colors.white.withValues(alpha: 0.40), fontSize: 12)),
               const SizedBox(height: 2),
               Text('Your account',
                   style: GoogleFonts.inter(
@@ -56,9 +56,9 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.04),
+                  color: Colors.white.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 child: Column(
                   children: [
@@ -78,7 +78,7 @@ class ProfileScreen extends StatelessWidget {
                               ],
                             ),
                             border: Border.all(
-                                color: Colors.white.withOpacity(0.10)),
+                                color: Colors.white.withValues(alpha: 0.10)),
                           ),
                           child: Center(
                             child: Text('A',
@@ -114,10 +114,10 @@ class ProfileScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text('alex.morgan@proton.me',
                         style: GoogleFonts.inter(
-                            color: Colors.white.withOpacity(0.45),
+                            color: Colors.white.withValues(alpha: 0.45),
                             fontSize: 12)),
                     const SizedBox(height: 20),
-                    Divider(height: 1, color: Colors.white.withOpacity(0.06)),
+                    Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
                     const SizedBox(height: 16),
                     Row(
                       children: _stats
@@ -135,7 +135,7 @@ class ProfileScreen extends StatelessWidget {
                                     const SizedBox(height: 2),
                                     Text(s.$2,
                                         style: GoogleFonts.inter(
-                                            color: Colors.white.withOpacity(0.40),
+                                            color: Colors.white.withValues(alpha: 0.40),
                                             fontSize: 10.5)),
                                   ],
                                 ),
@@ -151,9 +151,9 @@ class ProfileScreen extends StatelessWidget {
               // Account rows
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.02),
+                  color: Colors.white.withValues(alpha: 0.02),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
                 child: Column(
                   children: List.generate(_rows.length, (i) {
@@ -180,21 +180,21 @@ class ProfileScreen extends StatelessWidget {
                                     Text(r.$2,
                                         style: GoogleFonts.inter(
                                             color: Colors.white
-                                                .withOpacity(0.40),
+                                                .withValues(alpha: 0.40),
                                             fontSize: 11.5)),
                                   ],
                                 ),
                               ),
                               Icon(Icons.chevron_right_rounded,
                                   size: 16,
-                                  color: Colors.white.withOpacity(0.30)),
+                                  color: Colors.white.withValues(alpha: 0.30)),
                             ],
                           ),
                         ),
                         if (!isLast)
                           Divider(
                               height: 1,
-                              color: Colors.white.withOpacity(0.04),
+                              color: Colors.white.withValues(alpha: 0.04),
                               indent: 16,
                               endIndent: 16),
                       ],
@@ -211,20 +211,20 @@ class ProfileScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.03),
+                    color: Colors.white.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.logout_rounded,
                           size: 16,
-                          color: AppColors.riskHigh.withOpacity(0.9)),
+                          color: AppColors.riskHigh.withValues(alpha: 0.9)),
                       const SizedBox(width: 8),
                       Text('Sign out',
                           style: GoogleFonts.inter(
-                              color: AppColors.riskHigh.withOpacity(0.9),
+                              color: AppColors.riskHigh.withValues(alpha: 0.9),
                               fontSize: 13,
                               fontWeight: FontWeight.w500)),
                     ],

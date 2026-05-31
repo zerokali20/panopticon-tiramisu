@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.panopticon"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // ndkVersion = flutter.ndkVersion  // Commented out: NDK not required for debug builds (ObjectBox uses pre-built AARs)
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

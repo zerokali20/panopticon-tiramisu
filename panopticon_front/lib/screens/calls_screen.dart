@@ -47,7 +47,7 @@ class _CallsScreenState extends State<CallsScreen> {
             children: [
               Text('Threat Log',
                   style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.40), fontSize: 12)),
+                      color: Colors.white.withValues(alpha: 0.40), fontSize: 12)),
               const SizedBox(height: 2),
               Text(
                 '${allCalls.length} calls intercepted',
@@ -82,19 +82,19 @@ class _CallsScreenState extends State<CallsScreen> {
                   decoration: BoxDecoration(
                     color: isActive
                         ? Colors.white
-                        : Colors.white.withOpacity(0.04),
+                        : Colors.white.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(100),
                     border: isActive
                         ? null
                         : Border.all(
-                            color: Colors.white.withOpacity(0.06)),
+                            color: Colors.white.withValues(alpha: 0.06)),
                   ),
                   child: Text(
                     f.$2,
                     style: GoogleFonts.inter(
                       color: isActive
                           ? AppColors.background
-                          : Colors.white.withOpacity(0.60),
+                          : Colors.white.withValues(alpha: 0.60),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -114,7 +114,7 @@ class _CallsScreenState extends State<CallsScreen> {
                   child: Text(
                     'No calls match this filter.',
                     style: GoogleFonts.inter(
-                        color: Colors.white.withOpacity(0.40),
+                        color: Colors.white.withValues(alpha: 0.40),
                         fontSize: 12),
                   ),
                 )
@@ -123,7 +123,7 @@ class _CallsScreenState extends State<CallsScreen> {
                   itemCount: _filtered.length,
                   separatorBuilder: (_, __) => Divider(
                     height: 1,
-                    color: Colors.white.withOpacity(0.04),
+                    color: Colors.white.withValues(alpha: 0.04),
                     indent: 16,
                     endIndent: 16,
                   ),
@@ -132,26 +132,26 @@ class _CallsScreenState extends State<CallsScreen> {
                     return Container(
                       decoration: i == 0
                           ? BoxDecoration(
-                              color: Colors.white.withOpacity(0.02),
+                              color: Colors.white.withValues(alpha: 0.02),
                               borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(16)),
                               border: Border.all(
-                                  color: Colors.white.withOpacity(0.05)),
+                                  color: Colors.white.withValues(alpha: 0.05)),
                             )
                           : i == _filtered.length - 1
                               ? BoxDecoration(
-                                  color: Colors.white.withOpacity(0.02),
+                                  color: Colors.white.withValues(alpha: 0.02),
                                   borderRadius: const BorderRadius.vertical(
                                       bottom: Radius.circular(16)),
                                   border: Border.all(
                                       color:
-                                          Colors.white.withOpacity(0.05)),
+                                          Colors.white.withValues(alpha: 0.05)),
                                 )
                               : BoxDecoration(
-                                  color: Colors.white.withOpacity(0.02),
+                                  color: Colors.white.withValues(alpha: 0.02),
                                   border: Border.all(
                                       color:
-                                          Colors.white.withOpacity(0.05)),
+                                          Colors.white.withValues(alpha: 0.05)),
                                 ),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
@@ -192,7 +192,7 @@ class _CallsScreenState extends State<CallsScreen> {
                                 Text(
                                   c.number,
                                   style: GoogleFonts.inter(
-                                    color: Colors.white.withOpacity(0.40),
+                                    color: Colors.white.withValues(alpha: 0.40),
                                     fontSize: 11.5,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -204,7 +204,7 @@ class _CallsScreenState extends State<CallsScreen> {
                                       '${c.date} · ${c.time}',
                                       style: GoogleFonts.inter(
                                         color:
-                                            Colors.white.withOpacity(0.30),
+                                            Colors.white.withValues(alpha: 0.30),
                                         fontSize: 10.5,
                                       ),
                                     ),
@@ -216,14 +216,14 @@ class _CallsScreenState extends State<CallsScreen> {
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         color:
-                                            Colors.white.withOpacity(0.30),
+                                            Colors.white.withValues(alpha: 0.30),
                                       ),
                                     ),
                                     Text(
                                       c.duration,
                                       style: GoogleFonts.inter(
                                         color:
-                                            Colors.white.withOpacity(0.30),
+                                            Colors.white.withValues(alpha: 0.30),
                                         fontSize: 10.5,
                                       ),
                                     ),

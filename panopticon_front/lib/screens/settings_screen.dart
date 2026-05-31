@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_colors.dart';
 import '../widgets/toggle_switch.dart';
 
 /// Settings screen — toggle rows for protection & preference settings.
@@ -86,7 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Text('Settings',
                   style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.40), fontSize: 12)),
+                      color: Colors.white.withValues(alpha: 0.40), fontSize: 12)),
               const SizedBox(height: 2),
               Text('Configure Panopticon',
                   style: GoogleFonts.inter(
@@ -108,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Text(
                         sec.title,
                         style: GoogleFonts.inter(
-                          color: Colors.white.withOpacity(0.40),
+                          color: Colors.white.withValues(alpha: 0.40),
                           fontSize: 11,
                           letterSpacing: 0.8,
                           fontWeight: FontWeight.w500,
@@ -134,7 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 'ABOUT',
                 style: GoogleFonts.inter(
-                  color: Colors.white.withOpacity(0.40),
+                  color: Colors.white.withValues(alpha: 0.40),
                   fontSize: 11,
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w500,
@@ -155,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Text(
                   'Panopticon v0.9.2 · Zero-egress',
                   style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.30), fontSize: 11),
+                      color: Colors.white.withValues(alpha: 0.30), fontSize: 11),
                 ),
               ),
             ],
@@ -174,9 +173,9 @@ class _SettingsGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.02),
+        color: Colors.white.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: List.generate(children.length, (i) {
@@ -187,7 +186,7 @@ class _SettingsGroup extends StatelessWidget {
               if (!isLast)
                 Divider(
                     height: 1,
-                    color: Colors.white.withOpacity(0.04),
+                    color: Colors.white.withValues(alpha: 0.04),
                     indent: 16,
                     endIndent: 16),
             ],
@@ -224,10 +223,10 @@ class _ToggleRow extends StatelessWidget {
             height: 32,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: Colors.white.withOpacity(0.04),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              color: Colors.white.withValues(alpha: 0.04),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
-            child: Icon(icon, size: 16, color: Colors.white.withOpacity(0.70)),
+            child: Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.70)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -242,7 +241,7 @@ class _ToggleRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(desc,
                     style: GoogleFonts.inter(
-                        color: Colors.white.withOpacity(0.40), fontSize: 11.5)),
+                        color: Colors.white.withValues(alpha: 0.40), fontSize: 11.5)),
               ],
             ),
           ),
@@ -271,10 +270,10 @@ class _LinkRow extends StatelessWidget {
             height: 32,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: Colors.white.withOpacity(0.04),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              color: Colors.white.withValues(alpha: 0.04),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
-            child: Icon(icon, size: 16, color: Colors.white.withOpacity(0.70)),
+            child: Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.70)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -289,12 +288,12 @@ class _LinkRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(desc,
                     style: GoogleFonts.inter(
-                        color: Colors.white.withOpacity(0.40), fontSize: 11.5)),
+                        color: Colors.white.withValues(alpha: 0.40), fontSize: 11.5)),
               ],
             ),
           ),
           Icon(Icons.chevron_right_rounded,
-              size: 16, color: Colors.white.withOpacity(0.30)),
+              size: 16, color: Colors.white.withValues(alpha: 0.30)),
         ],
       ),
     );

@@ -10,8 +10,19 @@ import 'package:panopticon/screens/call_overlay_screen.dart';
 import 'package:panopticon/widgets/bottom_nav.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() {
+// GraphRAG subsystem
+import 'package:panopticon/data/graph_rag/graph_rag.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ── GraphRAG Bootstrap ────────────────────────────────────────
+  // Initialise both on-device databases before the UI renders.
+  // Both operations are fast (< 100 ms on first launch; < 5 ms on
+  // subsequent launches due to WAL and HNSW index caching).
+  final contextService = await _bootstrapGraphRag();
+  // ─────────────────────────────────────────────────────────────
+
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -21,31 +32,92 @@ void main() {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(const PanopticonApp());
+  runApp(PanopticonApp(contextService: contextService));
+}
+
+/// Bootstraps the GraphRAG engine:
+///   1. Opens the ObjectBox vector store.
+///   2. Creates the ContextRetrievalService with the stub embedding model.
+///   3. Seeds both stores if they are empty (first launch).
+Future<ContextRetrievalService> _bootstrapGraphRag() async {
+  // Creates VectorSearchService and opens ObjectBox internally.
+  final service = await ContextRetrievalService.create(
+    embeddingBridge: const DeterministicStubEmbeddingBridge(),
+    // TODO(llm-team): Replace stub with OnnxEmbeddingBridge once model is ready.
+    // embeddingBridge: OnnxEmbeddingBridge(modelPath: await _resolveModelPath()),
+  );
+
+  // Seed only if the graph is empty (idempotent on subsequent launches).
+  final db = PanopticonDatabase.instance;
+  final entityCount = await db.select(db.entities).get();
+  if (entityCount.isEmpty) {
+    await GraphSeeder(db.graphDao).seed();
+  }
+
+  // Seed the vector store if empty.
+  final vectorService = await VectorSearchService.create();
+  if (vectorService.chunkCount == 0) {
+    await VectorSeeder(
+      vectorService: vectorService,
+      embeddingBridge: const DeterministicStubEmbeddingBridge(),
+    ).seed();
+  }
+
+  return service;
 }
 
 class PanopticonApp extends StatelessWidget {
-  const PanopticonApp({super.key});
+  final ContextRetrievalService contextService;
+
+  const PanopticonApp({super.key, required this.contextService});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Panopticon',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: const ColorScheme.dark(
-          surface: AppColors.background,
-          primary: Colors.white,
+    return ContextServiceProvider(
+      service: contextService,
+      child: MaterialApp(
+        title: 'Panopticon',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: const ColorScheme.dark(
+            surface: AppColors.background,
+            primary: Colors.white,
+          ),
+          scaffoldBackgroundColor: AppColors.background,
+          textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
         ),
-        scaffoldBackgroundColor: AppColors.background,
-        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
+        home: const AppShell(),
       ),
-      home: const AppShell(),
     );
   }
+}
+
+/// InheritedWidget that makes [ContextRetrievalService] available
+/// anywhere in the widget tree without a state management library.
+class ContextServiceProvider extends InheritedWidget {
+  final ContextRetrievalService service;
+
+  const ContextServiceProvider({
+    super.key,
+    required this.service,
+    required super.child,
+  });
+
+  /// Retrieves the [ContextRetrievalService] from the nearest ancestor.
+  static ContextRetrievalService of(BuildContext context) {
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<ContextServiceProvider>();
+    assert(provider != null,
+        'ContextServiceProvider not found in widget tree.');
+    return provider!.service;
+  }
+
+  @override
+  bool updateShouldNotify(ContextServiceProvider oldWidget) =>
+      service != oldWidget.service;
 }
 
 class AppShell extends StatefulWidget {
@@ -85,7 +157,7 @@ class _AppShellState extends State<AppShell> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.indigo.withOpacity(0.08),
+                    AppColors.indigo.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -102,7 +174,7 @@ class _AppShellState extends State<AppShell> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.blue.withOpacity(0.06),
+                    AppColors.blue.withValues(alpha: 0.06),
                     Colors.transparent,
                   ],
                 ),
