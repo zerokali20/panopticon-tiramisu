@@ -8,10 +8,14 @@ import 'package:panopticon/screens/settings_screen.dart';
 import 'package:panopticon/screens/profile_screen.dart';
 import 'package:panopticon/screens/call_overlay_screen.dart';
 import 'package:panopticon/widgets/bottom_nav.dart';
+import 'package:panopticon/screens/boot_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // GraphRAG subsystem
 import 'package:panopticon/data/graph_rag/graph_rag.dart';
+import 'package:panopticon/core/services/model_manager.dart';
+import 'package:panopticon/core/agents/agent_router.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,7 +93,7 @@ class PanopticonApp extends StatelessWidget {
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
         ),
-        home: const AppShell(),
+        home: const BootScreen(),
       ),
     );
   }
@@ -132,13 +136,35 @@ class _AppShellState extends State<AppShell> {
   bool _callOpen = false;
   int _tab = 0; // 0=home, 1=calls, 2=settings, 3=profile
 
+  AgentRouter? _agentRouter;
+
   void _unlock() => setState(() => _authed = true);
   void _signOut() => setState(() {
         _authed = false;
         _tab = 0;
       });
-  void _openCall() => setState(() => _callOpen = true);
-  void _closeCall() => setState(() => _callOpen = false);
+      
+  void _openCall() async {
+    final modelManager = ModelManager();
+    final grammarString = await rootBundle.loadString('assets/grammars/sentry_grammar.gbnf');
+    final sentryPath = await modelManager.sentryModelPath;
+    final contextPath = await modelManager.contextModelPath;
+    
+    setState(() {
+      _agentRouter = AgentRouter.create(
+        sentryModelPath: sentryPath,
+        contextModelPath: contextPath,
+        grammarString: grammarString,
+      );
+      _callOpen = true;
+    });
+  }
+  
+  void _closeCall() {
+    _agentRouter?.dispose();
+    _agentRouter = null;
+    setState(() => _callOpen = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +219,10 @@ class _AppShellState extends State<AppShell> {
                 ? AuthScreen(key: const ValueKey('auth'), onUnlock: _unlock)
                 : _callOpen
                     ? CallOverlayScreen(
-                        key: const ValueKey('call'), onBack: _closeCall)
+                        key: const ValueKey('call'), 
+                        onBack: _closeCall,
+                        agentRouter: _agentRouter,
+                      )
                     : _buildMainContent(),
           ),
 
