@@ -17,15 +17,8 @@ import 'package:panopticon/core/services/model_manager.dart';
 import 'package:panopticon/core/agents/agent_router.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ── GraphRAG Bootstrap ────────────────────────────────────────
-  // Initialise both on-device databases before the UI renders.
-  // Both operations are fast (< 100 ms on first launch; < 5 ms on
-  // subsequent launches due to WAL and HNSW index caching).
-  final contextService = await _bootstrapGraphRag();
-  // ─────────────────────────────────────────────────────────────
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
@@ -36,7 +29,10 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(PanopticonApp(contextService: contextService));
+
+  // Call runApp() immediately so Flutter renders the first frame right away.
+  // GraphRAG bootstrap happens asynchronously inside AppStartup below.
+  runApp(const PanopticonApp());
 }
 
 /// Bootstraps the GraphRAG engine:
@@ -44,11 +40,8 @@ void main() async {
 ///   2. Creates the ContextRetrievalService with the stub embedding model.
 ///   3. Seeds both stores if they are empty (first launch).
 Future<ContextRetrievalService> _bootstrapGraphRag() async {
-  // Creates VectorSearchService and opens ObjectBox internally.
   final service = await ContextRetrievalService.create(
     embeddingBridge: const DeterministicStubEmbeddingBridge(),
-    // TODO(llm-team): Replace stub with OnnxEmbeddingBridge once model is ready.
-    // embeddingBridge: OnnxEmbeddingBridge(modelPath: await _resolveModelPath()),
   );
 
   // Seed only if the graph is empty (idempotent on subsequent launches).
@@ -71,30 +64,100 @@ Future<ContextRetrievalService> _bootstrapGraphRag() async {
 }
 
 class PanopticonApp extends StatelessWidget {
-  final ContextRetrievalService contextService;
-
-  const PanopticonApp({super.key, required this.contextService});
+  const PanopticonApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ContextServiceProvider(
-      service: contextService,
-      child: MaterialApp(
-        title: 'Panopticon',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: const ColorScheme.dark(
-            surface: AppColors.background,
-            primary: Colors.white,
-          ),
-          scaffoldBackgroundColor: AppColors.background,
-          textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
+    return MaterialApp(
+      title: 'Panopticon',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: const ColorScheme.dark(
+          surface: AppColors.background,
+          primary: Colors.white,
         ),
-        home: const BootScreen(),
+        scaffoldBackgroundColor: AppColors.background,
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
       ),
+      // AppStartup handles async bootstrap, then transitions to BootScreen
+      home: const AppStartup(),
+    );
+  }
+}
+
+/// Runs GraphRAG init in the background while showing a minimal splash.
+/// Once ready, transitions to BootScreen (for model download) → AppShell.
+class AppStartup extends StatefulWidget {
+  const AppStartup({super.key});
+  @override
+  State<AppStartup> createState() => _AppStartupState();
+}
+
+class _AppStartupState extends State<AppStartup> {
+  late final Future<ContextRetrievalService> _initFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFuture = _bootstrapGraphRag();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<ContextRetrievalService>(
+      future: _initFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  'Startup error:\n${snapshot.error}',
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          // Show a branded splash while databases open
+          return const Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.security_rounded, size: 64, color: Color(0xFF38BDF8)),
+                  SizedBox(height: 24),
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                    strokeWidth: 2,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Initializing…',
+                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Bootstrap done — hand off to BootScreen (model download check)
+        // wrapped in ContextServiceProvider so the rest of the tree can access it.
+        return ContextServiceProvider(
+          service: snapshot.data!,
+          child: const BootScreen(),
+        );
+      },
     );
   }
 }
