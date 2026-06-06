@@ -88,7 +88,7 @@ tools/whisper.cpp/ggml-base.bin
 Model files are ignored by Git because they are large.
 
 ## Direct Whisper Test
-
+Run this inside the `tools/whisper.cpp` folder, not the root folder of the project
 ```
 .\build\bin\Release\whisper-cli.exe -m .\ggml-base.bin -f .\samples\jfk.wav
 ```
@@ -107,6 +107,14 @@ Verified result:
 ```
 Transcription completed successfully.
 ```
+
+## to test the model in your own audio file
+
+Run this inside the `tools/whisper.cpp` folder, not the root folder of the project
+```
+.\build\bin\Release\whisper-cli.exe -m .\ggml-base.bin -f "FULL_PATH_TO_YOUR_Audiofile.wav"
+```
+
 
 ## Notes
 
