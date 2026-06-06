@@ -1,7 +1,12 @@
-# Panopticon (Aurora 2026 Competition)
 
-**Team Name:** Tira-miss-u  
-**Track:** Undergraduate Competition  
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 🌊  HEADER BANNER                                                      -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:3a8296,50:1a5276,100:091519&height=200&text=Panopticon%20Aurora%202026&fontSize=48&fontColor=61DAFB&fontAlignY=35&animation=twinkling&section=header&desc=Tira%20Miss%20%U%20%&descSize=16&descColor=88C0D0&descAlignY=55" width="100%" />
+</p>
+
+## **Track:** Undergraduate Competition  
 
 Panopticon is an on-device, multi-agent artificial intelligence system designed to combat the escalating threat of voice phishing (vishing) and deepfake audio manipulation. It integrates real-time audio perception, autonomous reasoning, and proactive user intervention to neutralize social engineering attacks by acting as an objective, logical evaluator during high-stress communications.
 
