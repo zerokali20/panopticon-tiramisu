@@ -96,6 +96,7 @@ Model files are ignored by Git because they are large.
 ## Dart Wrapper Test
 
 From `panopticon_front`:
+Run this inside the `panopticon_front` folder, not the root folder of the project
 
 ```
 dart run test/transcribe_audio_test.dart --executable="C:\Users\Exam\Desktop\Projects\AUrora\GIT\panopticon-tiramisu\tools\whisper.cpp\build\bin\Release\whisper-cli.exe" --model="C:\Users\Exam\Desktop\Projects\AUrora\GIT\panopticon-tiramisu\tools\whisper.cpp\ggml-base.bin" --audio="C:\Users\Exam\Desktop\Projects\AUrora\GIT\panopticon-tiramisu\tools\whisper.cpp\samples\jfk.wav"
