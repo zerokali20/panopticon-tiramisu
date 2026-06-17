@@ -134,15 +134,17 @@ class DocumentChunkingPipeline {
 
     while (start < text.length) {
       final end = (start + config.targetChunkSize).clamp(0, text.length);
+      int splitAt = end;
 
-      // Look for a sentence boundary before [end].
-      int splitAt = _findSentenceBoundary(text, start, end);
-      if (splitAt == -1) {
-        // Fall back to word boundary.
-        splitAt = _findWordBoundary(text, start, end);
-      }
-      if (splitAt == -1 || splitAt <= start) {
-        splitAt = end; // Hard split as last resort.
+      // Only search for boundaries if we haven't reached the end of the document
+      if (end < text.length) {
+        splitAt = _findSentenceBoundary(text, start, end);
+        if (splitAt == -1) {
+          splitAt = _findWordBoundary(text, start, end);
+        }
+        if (splitAt == -1 || splitAt <= start) {
+          splitAt = end;
+        }
       }
 
       final chunk = text.substring(start, splitAt).trim();
@@ -150,11 +152,19 @@ class DocumentChunkingPipeline {
         chunks.add(chunk);
       }
 
+      // If we've consumed all the text, break to prevent infinite loops
+      if (splitAt >= text.length) {
+        break;
+      }
+
+      final prevStart = start;
       // Advance start, stepping back by [overlapSize] for the next window.
       start = (splitAt - config.overlapSize).clamp(0, text.length);
 
-      // Safety: prevent infinite loop on degenerate input.
-      if (start >= splitAt) {
+      // Safety: MUST force forward progress to prevent infinite OOM loops.
+      // If the extracted chunk was smaller than the overlap size, stepping back
+      // would cause us to go backwards. In this case, use zero overlap.
+      if (start <= prevStart) {
         start = splitAt;
       }
     }

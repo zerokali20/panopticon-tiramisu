@@ -8,11 +8,21 @@ plugins {
 android {
     namespace = "com.example.panopticon"
     compileSdk = flutter.compileSdkVersion
-    // ndkVersion = flutter.ndkVersion  // Commented out: NDK not required for debug builds (ObjectBox uses pre-built AARs)
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        prefab = true
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
     }
 
     kotlinOptions {
@@ -28,6 +38,18 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Only build the arm64-v8a ABI — the target device is arm64.
+        // This avoids x86-specific SIMD header issues in RNNoise and halves build time.
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments += "-DANDROID_STL=c++_shared"
+            }
+        }
     }
 
     buildTypes {
@@ -41,4 +63,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.google.oboe:oboe:1.8.0")
 }

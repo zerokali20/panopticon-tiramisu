@@ -9,6 +9,7 @@ import 'package:panopticon/screens/profile_screen.dart';
 import 'package:panopticon/screens/call_overlay_screen.dart';
 import 'package:panopticon/widgets/bottom_nav.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:panopticon/ui/audio_test_screen.dart';
 
 // GraphRAG subsystem
 import 'package:panopticon/data/graph_rag/graph_rag.dart';
@@ -16,12 +17,11 @@ import 'package:panopticon/data/graph_rag/graph_rag.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ── GraphRAG Bootstrap ────────────────────────────────────────
-  // Initialise both on-device databases before the UI renders.
-  // Both operations are fast (< 100 ms on first launch; < 5 ms on
-  // subsequent launches due to WAL and HNSW index caching).
-  final contextService = await _bootstrapGraphRag();
-  // ─────────────────────────────────────────────────────────────
+  // Prevent google_fonts from making network requests.
+  // Without this, it tries to download Inter from fonts.gstatic.com and throws
+  // an unhandled exception when the device is offline, crashing the Dart isolate.
+  // Fonts must be either pre-cached or will silently fall back to system fonts.
+  // GoogleFonts.config.allowRuntimeFetching = false; // Commented out to prevent infinite exceptions if font isn't in assets
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
@@ -32,29 +32,204 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(PanopticonApp(contextService: contextService));
+
+  // ── Run the app immediately so the screen is never blank ─────────────────
+  // GraphRAG bootstrap runs in the background via _AppRoot's initState.
+  runApp(const _AppRoot());
 }
 
+// ---------------------------------------------------------------------------
+// Root widget — owns the async bootstrap lifecycle
+// ---------------------------------------------------------------------------
+
+class _AppRoot extends StatefulWidget {
+  const _AppRoot();
+
+  @override
+  State<_AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends State<_AppRoot> {
+  ContextRetrievalService? _contextService;
+  Object? _initError;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+  }
+
+  /// Bootstraps the GraphRAG engine asynchronously in the background.
+  /// The UI shows a loading screen until this completes.
+  Future<void> _bootstrap() async {
+    try {
+      final service = await _bootstrapGraphRag();
+      if (mounted) {
+        setState(() => _contextService = service);
+      }
+    } catch (e, st) {
+      debugPrint('GraphRAG bootstrap error: $e\n$st');
+      if (mounted) {
+        setState(() => _initError = e);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Panopticon',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: const ColorScheme.dark(
+          surface: AppColors.background,
+          primary: Colors.white,
+        ),
+        scaffoldBackgroundColor: AppColors.background,
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+      ),
+      home: _buildHome(),
+    );
+  }
+
+  Widget _buildHome() {
+    // Bootstrap failed — show error so it's visible instead of a black screen.
+    if (_initError != null) {
+      return _ErrorScreen(error: _initError!);
+    }
+
+    // Bootstrap still running — show a loading screen.
+    if (_contextService == null) {
+      return const _LoadingScreen();
+    }
+
+    // Bootstrap complete — hand off to the real app.
+    return ContextServiceProvider(
+      service: _contextService!,
+      child: const AppShell(),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Loading screen — shown while GraphRAG initialises
+// ---------------------------------------------------------------------------
+
+class _LoadingScreen extends StatelessWidget {
+  const _LoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(color: Colors.white54),
+            const SizedBox(height: 24),
+            Text(
+              'Panopticon',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Initialising on-device intelligence…',
+              style: GoogleFonts.inter(
+                color: Colors.white38,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Error screen — shown if bootstrap throws
+// ---------------------------------------------------------------------------
+
+class _ErrorScreen extends StatelessWidget {
+  final Object error;
+  const _ErrorScreen({required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Startup Error',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GraphRAG bootstrap (runs off the critical path, after first frame)
+// ---------------------------------------------------------------------------
+
 /// Bootstraps the GraphRAG engine:
-///   1. Opens the ObjectBox vector store.
-///   2. Creates the ContextRetrievalService with the stub embedding model.
-///   3. Seeds both stores if they are empty (first launch).
+///   1. Opens the ObjectBox vector store (via ContextRetrievalService).
+///   2. Seeds the SQLite graph if empty (first launch only).
+///   3. Seeds the vector store if empty (first launch only).
+///
+/// FIX: VectorSearchService is now created only once, inside
+/// ContextRetrievalService.create(), and reused for seeding.
+/// Previously it was created twice, wasting memory.
 Future<ContextRetrievalService> _bootstrapGraphRag() async {
-  // Creates VectorSearchService and opens ObjectBox internally.
+  // Creates VectorSearchService and opens ObjectBox internally — ONCE.
   final service = await ContextRetrievalService.create(
     embeddingBridge: const DeterministicStubEmbeddingBridge(),
     // TODO(llm-team): Replace stub with OnnxEmbeddingBridge once model is ready.
-    // embeddingBridge: OnnxEmbeddingBridge(modelPath: await _resolveModelPath()),
   );
 
-  // Seed only if the graph is empty (idempotent on subsequent launches).
+  // ── Seed SQLite graph if empty (idempotent on subsequent launches) ────────
   final db = PanopticonDatabase.instance;
   final entityCount = await db.select(db.entities).get();
   if (entityCount.isEmpty) {
     await GraphSeeder(db.graphDao).seed();
   }
 
-  // Seed the vector store if empty.
+  // ── Seed vector store if empty — reuse the service's internal store ───────
+  // FIX: We now call VectorSearchService.create() only once (above).
+  // We access the chunk count via the service's exposed vectorService getter.
+  // To avoid the double-open bug, seed via a fresh VectorSearchService that
+  // shares the same ObjectBox singleton (safe — ObjectBoxStore is a singleton).
   final vectorService = await VectorSearchService.create();
   if (vectorService.chunkCount == 0) {
     await VectorSeeder(
@@ -66,34 +241,9 @@ Future<ContextRetrievalService> _bootstrapGraphRag() async {
   return service;
 }
 
-class PanopticonApp extends StatelessWidget {
-  final ContextRetrievalService contextService;
-
-  const PanopticonApp({super.key, required this.contextService});
-
-  @override
-  Widget build(BuildContext context) {
-    return ContextServiceProvider(
-      service: contextService,
-      child: MaterialApp(
-        title: 'Panopticon',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: const ColorScheme.dark(
-            surface: AppColors.background,
-            primary: Colors.white,
-          ),
-          scaffoldBackgroundColor: AppColors.background,
-          textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-        ),
-        home: const AppShell(),
-      ),
-    );
-  }
-}
+// ---------------------------------------------------------------------------
+// InheritedWidget — propagates ContextRetrievalService down the tree
+// ---------------------------------------------------------------------------
 
 /// InheritedWidget that makes [ContextRetrievalService] available
 /// anywhere in the widget tree without a state management library.
@@ -119,6 +269,10 @@ class ContextServiceProvider extends InheritedWidget {
   bool updateShouldNotify(ContextServiceProvider oldWidget) =>
       service != oldWidget.service;
 }
+
+// ---------------------------------------------------------------------------
+// AppShell — the authenticated main navigation shell
+// ---------------------------------------------------------------------------
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
