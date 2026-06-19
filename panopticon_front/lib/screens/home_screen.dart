@@ -1,19 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../widgets/logo.dart';
 import '../widgets/risk_dot.dart';
 import '../data/mock_data.dart';
+import '../core/ffi/audio_bindings.dart';
 
 /// Home screen — status card, quick stats, recent calls list.
 /// Port of React HomeScreen component.
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final VoidCallback onCall;
 
   const HomeScreen({super.key, required this.onCall});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // null = not yet tested; int = result from C++ bridge
+  int? _bridgeResult;
+  bool _bridgeTesting = false;
+
+  Future<void> _testBridge() async {
+    setState(() => _bridgeTesting = true);
+    await Future.delayed(Duration.zero); // yield so the spinner renders
+    final result = AudioPipelineBridge.testBridge(10);
+    // ignore: avoid_print
+    print('C++ returned: $result');
+    setState(() {
+      _bridgeResult = result;
+      _bridgeTesting = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final onCall = widget.onCall;
     final top = MediaQuery.of(context).padding.top;
 
     return Column(
@@ -103,6 +127,20 @@ class HomeScreen extends StatelessWidget {
                   }),
                 ),
               ),
+
+              const SizedBox(height: 24),
+
+              // ── C++ Bridge Test ──────────────────────────────────
+              _BridgeTestCard(
+                result: _bridgeResult,
+                isTesting: _bridgeTesting,
+                onTest: _testBridge,
+              ),
+
+              const SizedBox(height: 24),
+              
+              // ── Audio Loopback Control ────────────────────────────────
+              const _LoopbackControlCard(),
 
               const SizedBox(height: 24),
               Center(
@@ -342,6 +380,292 @@ class _IconBtn extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.60)),
+    );
+  }
+}
+
+// ── Developer diagnostic: C++ FFI bridge test ──────────────────────────────
+class _BridgeTestCard extends StatelessWidget {
+  final int? result;
+  final bool isTesting;
+  final VoidCallback onTest;
+
+  const _BridgeTestCard({
+    required this.result,
+    required this.isTesting,
+    required this.onTest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // success = bridge returned exactly 20 (double of input 10)
+    final bool success = result == 20;
+    final Color accentColor =
+        result == null ? AppColors.indigo : (success ? AppColors.emerald : const Color(0xFFF59E0B));
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: result == null
+              ? Colors.white.withValues(alpha: 0.06)
+              : accentColor.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Card header
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.memory_rounded,
+                  size: 14,
+                  color: accentColor,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'C++ FFI Bridge',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              // Status chip
+              if (result != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    success ? 'PASS' : 'UNEXPECTED',
+                    style: GoogleFonts.inter(
+                      color: accentColor,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Description
+          Text(
+            'Calls testBridge(10) via dart:ffi → libpanopticon_audio.so.\n'
+            'Expects the C++ side to return 20 (input × 2).',
+            style: GoogleFonts.inter(
+              color: Colors.white.withValues(alpha: 0.40),
+              fontSize: 11,
+              height: 1.5,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Result row (only shown after test)
+          if (result != null) ...[
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: accentColor.withValues(alpha: 0.18)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    success
+                        ? Icons.check_circle_rounded
+                        : Icons.warning_amber_rounded,
+                    size: 14,
+                    color: accentColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    success
+                        ? 'C++ returned: $result  ✓  Bridge is live!'
+                        : 'C++ returned: $result  (expected 20)',
+                    style: GoogleFonts.jetBrainsMono(
+                      color: accentColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // Test button
+          GestureDetector(
+            onTap: isTesting ? null : onTest,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: isTesting
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: isTesting
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : accentColor.withValues(alpha: 0.30)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isTesting) ...[
+                    SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: Colors.white.withValues(alpha: 0.50),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Running…',
+                      style: GoogleFonts.inter(
+                        color: Colors.white.withValues(alpha: 0.50),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ] else ...[
+                    Icon(Icons.play_arrow_rounded,
+                        size: 14, color: accentColor),
+                    const SizedBox(width: 6),
+                    Text(
+                      result == null
+                          ? 'Run bridge test'
+                          : 'Run again',
+                      style: GoogleFonts.inter(
+                        color: accentColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Audio Loopback Control Card ───────────────────────────────────────
+class _LoopbackControlCard extends StatelessWidget {
+  const _LoopbackControlCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.blue.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.screen_share_rounded,
+                  size: 14,
+                  color: AppColors.blue,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'System Audio Monitor',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Captures system audio (like WhatsApp calls) in the background and streams it directly to the Whisper C++ engine.',
+            style: GoogleFonts.inter(
+              color: Colors.white.withValues(alpha: 0.40),
+              fontSize: 11,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 14),
+          GestureDetector(
+            onTap: () async {
+              const platform = MethodChannel('com.panopticon/audio_loopback');
+              await platform.invokeMethod('startLoopbackCapture');
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.blue.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.blue.withValues(alpha: 0.30)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.play_arrow_rounded,
+                      size: 14, color: AppColors.blue),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Start Background Loopback',
+                    style: GoogleFonts.inter(
+                      color: AppColors.blue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
