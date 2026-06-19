@@ -14,7 +14,7 @@ dependencies:
   go_router: ^14.2.7
   permission_handler: ^11.3.1
   file_picker: ^8.0.0+1
-  ffi: ^2.1.0
+  ffi: ^2.1.2
 
   # ── GraphRAG: SQLite Relational Graph Engine ─────────────────────────────
   # Drift (type-safe SQLite ORM with code generation)
@@ -24,6 +24,7 @@ dependencies:
   # File system path utilities
   path_provider: ^2.1.4
   path: ^1.9.0
+  dio: ^5.4.3
 
   # ── GraphRAG: ObjectBox Vector Store ─────────────────────────────────────
   # ObjectBox core (includes the HNSW vector index)
@@ -56,3 +57,5 @@ dependency_overrides:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/grammars/

@@ -152,21 +152,21 @@ class DocumentChunkingPipeline {
         chunks.add(chunk);
       }
 
-      // If we've consumed all the text, break to prevent infinite loops
       if (splitAt >= text.length) {
-        break;
+        break; // Reached the end of the document
       }
 
-      final prevStart = start;
       // Advance start, stepping back by [overlapSize] for the next window.
-      start = (splitAt - config.overlapSize).clamp(0, text.length);
-
-      // Safety: MUST force forward progress to prevent infinite OOM loops.
-      // If the extracted chunk was smaller than the overlap size, stepping back
-      // would cause us to go backwards. In this case, use zero overlap.
-      if (start <= prevStart) {
-        start = splitAt;
+      int nextStart = splitAt - config.overlapSize;
+      
+      // Safety: MUST strictly advance to prevent infinite loops.
+      // If the chunk we found was smaller than overlapSize, stepping back 
+      // would send us backwards. In that case, just advance to splitAt.
+      if (nextStart <= start) {
+        nextStart = splitAt;
       }
+      
+      start = nextStart.clamp(0, text.length);
     }
 
     return chunks;

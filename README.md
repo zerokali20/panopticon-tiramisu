@@ -1,124 +1,39 @@
-panopticon-tiramisu
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 🌊  HEADER BANNER                                                      -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:3a8296,50:1a5276,100:091519&height=200&text=Panopticon%20Aurora%202026&fontSize=48&fontColor=61DAFB&fontAlignY=35&animation=twinkling&section=header&desc=Tira%20Miss%20%U%20%&descSize=16&descColor=88C0D0&descAlignY=55" width="100%" />
+</p>
 
+## **Track:** Undergraduate Competition  
 
-## Audio Recognition Setup (Whisper.cpp)
+Panopticon is an on-device, multi-agent artificial intelligence system designed to combat the escalating threat of voice phishing (vishing) and deepfake audio manipulation. It integrates real-time audio perception, autonomous reasoning, and proactive user intervention to neutralize social engineering attacks by acting as an objective, logical evaluator during high-stress communications.
 
-This document explains the local speech-to-text setup for the Panopticon / Vocal Sentinel audio subsystem.
+## Architecture
 
-## Purpose
+Panopticon runs locally with 100% on-device data sovereignty (zero cloud egress). It features a dual-model Multi-Agent Router:
+- **Sentry Agent:** A lightweight model (Phi-3) that monitors the live STT transcript for threats.
+- **Context Agent:** A larger 8B model (Llama 3.1) deployed dynamically via GraphRAG (ObjectBox + Drift) when the Sentry Agent triggers high confidence in a threat.
 
-The audio subsystem converts speech audio into text locally using Whisper.cpp. This transcript can then be passed to the local reasoning pipeline for scam/vishing detection.
+## Local LLM Setup & Deployment
 
-## Current Pipeline
+To keep the application binary lightweight, the large `.gguf` language models are NOT bundled in the app repository. 
 
+1. **On First Launch**: The app will launch into a `BootScreen` that streams the multi-gigabyte models directly into the device's `ApplicationSupportDirectory`.
+2. **Local Testing**: During development, you must host the `.gguf` models on a local HTTP server.
+   - Run `python -m http.server 8000` in your models directory.
+   - Update `_baseUrl` in `lib/core/services/model_manager.dart` to match your local IP.
+
+## Building the App
+
+This project uses Flutter with a C++ native backend bridge (`llama.cpp`) connected via Dart FFI.
+```bash
+# Build native inference backend
+cd panopticon_front/native/libllama_bridge
+cmake -S . -B build_host
+cmake --build build_host --config Release --parallel
+
+# Run flutter application
+cd panopticon_front
+flutter run
 ```
-Audio File
-↓
-Whisper.cpp CLI
-↓
-GGML Base Model
-↓
-Dart Transcription Service
-↓
-Transcript Output
-
-```
-First create a local `tools` directory in the repository root and clone Whisper.cpp into it:
-
-```
-mkdir tools
-cd tools
-git clone https://github.com/ggml-org/whisper.cpp.git
-```
-
-This creates:
-
-```
-panopticon-tiramisu/tools/whisper.cpp
-```
-
-## Folder Structure
-
-```
-panopticon-tiramisu/
-├── panopticon_front/
-│   └── lib/services/transcription/
-│       ├── transcription_service.dart
-│       ├── whisper_transcription_service.dart
-│       └── transcription.dart
-└── tools/
-    └── whisper.cpp/
-```
-
-## Whisper.cpp Setup
-
-Whisper.cpp is stored under:
-
-```
-tools/whisper.cpp
-```
-
-Build command:
-
-```
-cmake -B build
-cmake --build build --config Release
-```
-
-The generated executable is:
-
-```
-tools/whisper.cpp/build/bin/Release/whisper-cli.exe
-```
-
-## Model Setup
-
-The current model used is Whisper Base:
-
-```
-.\models\download-ggml-model.cmd base
-```
-
-This creates:
-
-```
-tools/whisper.cpp/ggml-base.bin
-```
-
-Model files are ignored by Git because they are large.
-
-## Direct Whisper Test
-Run this inside the `tools/whisper.cpp` folder, not the root folder of the project
-```
-.\build\bin\Release\whisper-cli.exe -m .\ggml-base.bin -f .\samples\jfk.wav
-```
-
-## Dart Wrapper Test
-
-From `panopticon_front`:
-Run this inside the `panopticon_front` folder, not the root folder of the project
-
-```
-dart run test/transcribe_audio_test.dart --executable="C:\Users\Exam\Desktop\Projects\AUrora\GIT\panopticon-tiramisu\tools\whisper.cpp\build\bin\Release\whisper-cli.exe" --model="C:\Users\Exam\Desktop\Projects\AUrora\GIT\panopticon-tiramisu\tools\whisper.cpp\ggml-base.bin" --audio="C:\Users\Exam\Desktop\Projects\AUrora\GIT\panopticon-tiramisu\tools\whisper.cpp\samples\jfk.wav"
-```
-
-Verified result:
-
-```
-Transcription completed successfully.
-```
-
-## to test the model in your own audio file
-
-Run this inside the `tools/whisper.cpp` folder, not the root folder of the project
-```
-.\build\bin\Release\whisper-cli.exe -m .\ggml-base.bin -f "FULL_PATH_TO_YOUR_Audiofile.wav"
-```
-
-
-## Notes
-
-* Whisper.cpp build files should not be committed.
-* Whisper model files should not be committed.
-* The current implementation uses `Process.run()` from Dart to call the Whisper.cpp CLI.
-* Future work may include real-time audio streaming, microphone/call audio capture, noise reduction, and speaker verification.
