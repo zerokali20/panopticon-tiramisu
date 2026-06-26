@@ -1,0 +1,6 @@
+root ::= "{" ws "\"threat_detected\"" ws ":" ws boolean ws "," ws "\"confidence_score\"" ws ":" ws float ws "," ws "\"reasoning\"" ws ":" ws string ws "}"
+
+boolean ::= "true" | "false"
+float ::= "0." [0-9]+ | "1.0" | "1.00"
+string ::= "\""   ([^"\\] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F]))* "\""
+ws ::= [ \t\n]*
