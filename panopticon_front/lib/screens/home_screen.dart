@@ -6,6 +6,9 @@ import '../widgets/logo.dart';
 import '../widgets/risk_dot.dart';
 import '../data/mock_data.dart';
 import '../core/ffi/audio_bindings.dart';
+import '../core/call_state_manager.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:panopticon/data/graph_rag/services/discrepancy_report.dart';
 
 /// Home screen — status card, quick stats, recent calls list.
 /// Port of React HomeScreen component.
@@ -33,6 +36,89 @@ class _HomeScreenState extends State<HomeScreen> {
       _bridgeResult = result;
       _bridgeTesting = false;
     });
+  }
+
+  Widget _buildHighlightedTranscript(String text) {
+    if (text.isEmpty) {
+      return Text(
+        'Listening for audio...',
+        style: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 13,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
+    final sensitiveTerms = [
+      'otp', 'frozen', 'unauthorized', 'anydesk', 'safe account',
+      'underwriting department', 'interest rate reduction', 'limited time offer'
+    ];
+
+    // Build regex to match any of the terms (case-insensitive)
+    final pattern = sensitiveTerms.map((t) => RegExp.escape(t)).join('|');
+    final regex = RegExp('($pattern)', caseSensitive: false);
+
+    final spans = <TextSpan>[];
+    int lastMatchEnd = 0;
+
+    for (final match in regex.allMatches(text)) {
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(
+          text: text.substring(lastMatchEnd, match.start),
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+          ),
+        ));
+      }
+      spans.add(TextSpan(
+        text: match.group(0),
+        style: GoogleFonts.inter(
+          color: Colors.redAccent,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          fontStyle: FontStyle.italic,
+        ),
+      ));
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastMatchEnd),
+        style: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 13,
+          fontStyle: FontStyle.italic,
+        ),
+      ));
+    }
+
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: 'Transcript: "',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          ...spans,
+          TextSpan(
+            text: '"',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -83,6 +169,74 @@ class _HomeScreenState extends State<HomeScreen> {
               // Status card
               _StatusCard(onCall: onCall),
               const SizedBox(height: 28),
+
+              // Live Call Widget
+              Builder(
+                builder: (context) {
+                  try {
+                    final state = CallStateProvider.of(context);
+                    if (!state.isMonitoring) return const SizedBox.shrink();
+
+                    final riskColor = state.latestReport?.riskLevel == RiskLevel.high
+                        ? Colors.redAccent
+                        : state.latestReport?.riskLevel == RiskLevel.medium
+                            ? Colors.orangeAccent
+                            : AppColors.emerald;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 28),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: riskColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: riskColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.record_voice_over, color: riskColor, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                'LIVE CALL ANALYSIS',
+                                style: GoogleFonts.inter(
+                                  color: riskColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildHighlightedTranscript(state.fullTranscript),
+                          if (state.latestReport != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'GraphRAG Verdict: ${state.latestReport!.riskLevel.name.toUpperCase()}',
+                              style: GoogleFonts.inter(
+                                color: riskColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              state.latestReport!.riskRationale,
+                              style: GoogleFonts.inter(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  } catch (e) {
+                    return const SizedBox.shrink();
+                  }
+                },
+              ),
 
               // Section header
               Row(
@@ -502,14 +656,16 @@ class _BridgeTestCard extends StatelessWidget {
                     color: accentColor,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    success
-                        ? 'C++ returned: $result  ✓  Bridge is live!'
-                        : 'C++ returned: $result  (expected 20)',
-                    style: GoogleFonts.jetBrainsMono(
-                      color: accentColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  Expanded(
+                    child: Text(
+                      success
+                          ? 'C++ returned: $result. Bridge is live!'
+                          : 'C++ returned: $result (expected 20)',
+                      style: GoogleFonts.jetBrainsMono(
+                        color: accentColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -632,37 +788,61 @@ class _LoopbackControlCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          GestureDetector(
-            onTap: () async {
-              const platform = MethodChannel('com.panopticon/audio_loopback');
-              await platform.invokeMethod('startLoopbackCapture');
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.blue.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.blue.withValues(alpha: 0.30)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.play_arrow_rounded,
-                      size: 14, color: AppColors.blue),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Start Background Loopback',
-                    style: GoogleFonts.inter(
-                      color: AppColors.blue,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+          Builder(
+            builder: (context) {
+              final manager = CallStateProvider.of(context);
+              final isRunning = manager.isMonitoring;
+
+              return GestureDetector(
+                onTap: () async {
+                  if (isRunning) {
+                    await manager.stopLoopback();
+                  } else {
+                    final status = await Permission.microphone.request();
+                    if (status.isGranted) {
+                      await manager.startLoopback();
+                    } else {
+                      debugPrint('Microphone permission denied');
+                    }
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isRunning 
+                        ? Colors.redAccent.withValues(alpha: 0.12)
+                        : AppColors.blue.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isRunning 
+                          ? Colors.redAccent.withValues(alpha: 0.30)
+                          : AppColors.blue.withValues(alpha: 0.30)
                     ),
                   ),
-                ],
-              ),
-            ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                        size: 14, 
+                        color: isRunning ? Colors.redAccent : AppColors.blue,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isRunning ? 'Stop Loopback' : 'Start Background Loopback',
+                        style: GoogleFonts.inter(
+                          color: isRunning ? Colors.redAccent : AppColors.blue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
           ),
         ],
       ),

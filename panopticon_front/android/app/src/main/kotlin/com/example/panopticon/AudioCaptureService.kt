@@ -72,7 +72,11 @@ class AudioCaptureService : Service() {
             .setSmallIcon(android.R.drawable.ic_dialog_info) // using standard android icon
             .build()
 
-        startForeground(1, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(1, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else {
+            startForeground(1, notification)
+        }
     }
 
     private fun startAudioCapture() {
@@ -81,7 +85,6 @@ class AudioCaptureService : Service() {
         val config = AudioPlaybackCaptureConfiguration.Builder(mediaProjection!!)
             .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
             .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
-            .addMatchingUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
             .build()
 
         val format = AudioFormat.Builder()
@@ -108,6 +111,7 @@ class AudioCaptureService : Service() {
         thread {
             // Buffer size in floats (e.g. 480 frames to match RNNOISE_FRAME_SIZE)
             val floatBuffer = FloatArray(480)
+            
             while (isRecording) {
                 val readStatus = audioRecord?.read(floatBuffer, 0, floatBuffer.size, AudioRecord.READ_BLOCKING) ?: 0
                 if (readStatus > 0) {
