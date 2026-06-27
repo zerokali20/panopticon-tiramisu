@@ -1,1 +1,4 @@
 tools/
+.idea/
+.vscode/
+panopticon_front/android/build/
