@@ -122,8 +122,8 @@ export default function ContactSection() {
                       </svg>
                     ),
                     label: 'Email',
-                    value: 'team@tiramissU.dev',
-                    href: 'mailto:team@tiramissU.dev',
+                    value: 'bhagikaru2003@gmail.com',
+                    href: 'mailto:bagikaru2003@gmail.com',
                     color: '#38bdf8',
                   },
                   {
@@ -134,7 +134,7 @@ export default function ContactSection() {
                     ),
                     label: 'GitHub',
                     value: 'github.com/tira-miss-u',
-                    href: '#',
+                    href: 'https://github.com/imaadh-ifthi/panopticon-tiramisu',
                     color: '#a855f7',
                   },
                   {
