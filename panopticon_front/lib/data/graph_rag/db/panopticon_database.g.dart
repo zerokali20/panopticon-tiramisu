@@ -968,8 +968,7 @@ final class $$EntitiesTableReferences
   static MultiTypedResultKey<$IdentifiersTable, List<Identifier>>
       _identifiersRefsTable(_$PanopticonDatabase db) =>
           MultiTypedResultKey.fromTable(db.identifiers,
-              aliasName: $_aliasNameGenerator(
-                  db.entities.id, db.identifiers.entityId));
+              aliasName: 'entities__id__identifiers__entity_id');
 
   $$IdentifiersTableProcessedTableManager get identifiersRefs {
     final manager = $$IdentifiersTableTableManager($_db, $_db.identifiers)
@@ -1200,8 +1199,7 @@ final class $$IdentifiersTableReferences extends BaseReferences<
   $$IdentifiersTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $EntitiesTable _entityIdTable(_$PanopticonDatabase db) =>
-      db.entities.createAlias(
-          $_aliasNameGenerator(db.identifiers.entityId, db.entities.id));
+      db.entities.createAlias('identifiers__entity_id__entities__id');
 
   $$EntitiesTableProcessedTableManager get entityId {
     final $_column = $_itemColumn<int>('entity_id')!;
@@ -1471,8 +1469,7 @@ final class $$RelationshipsTableReferences extends BaseReferences<
       super.$_db, super.$_table, super.$_typedResult);
 
   static $EntitiesTable _sourceIdTable(_$PanopticonDatabase db) =>
-      db.entities.createAlias(
-          $_aliasNameGenerator(db.relationships.sourceId, db.entities.id));
+      db.entities.createAlias('relationships__source_id__entities__id');
 
   $$EntitiesTableProcessedTableManager get sourceId {
     final $_column = $_itemColumn<int>('source_id')!;
@@ -1486,8 +1483,7 @@ final class $$RelationshipsTableReferences extends BaseReferences<
   }
 
   static $EntitiesTable _targetIdTable(_$PanopticonDatabase db) =>
-      db.entities.createAlias(
-          $_aliasNameGenerator(db.relationships.targetId, db.entities.id));
+      db.entities.createAlias('relationships__target_id__entities__id');
 
   $$EntitiesTableProcessedTableManager get targetId {
     final $_column = $_itemColumn<int>('target_id')!;
