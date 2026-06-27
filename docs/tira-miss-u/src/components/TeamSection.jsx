@@ -19,7 +19,7 @@ const members = [
     skills: ['llama.cpp', 'quantisation', 'Local LLM'],
     github: 'https://github.com/imaadh-ifthi',
     linkedin: 'https://www.linkedin.com/in/imaadh-ifthikar-the-computer-engineer',
-    email: '#',
+    email: 'e22151@eng.pdn.ac.lk',
   },
   {
     name: 'Rashad Shamil',
@@ -30,7 +30,7 @@ const members = [
     skills: ['Whisper.cpp', 'App Framework', 'Dart', 'ObjectBox'],
     github: 'https://github.com/RashadShamil',
     linkedin: 'https://www.linkedin.com/in/rashadshamil/',
-    email: '#',
+    email: 'shamilrashad@gmail.com',
   },
   {
     name: 'Bhagya Karunanayake',
@@ -41,7 +41,7 @@ const members = [
     skills: ['RAG', 'VectorDB', 'LlamaIndex', 'RNNoise'],
     github: 'https://github.com/zerokali20',
     linkedin: 'https://www.linkedin.com/in/bhagya-karunanayake-b52085270',
-    email: '#',
+    email: 'bhagikaru2003@gmail.com',
   },
   {
     name: 'S. Kishonithan',
@@ -52,7 +52,7 @@ const members = [
     skills: ['audio recognition', 'Privacy', 'Federated ML'],
     github: 'https://github.com/kisho19',
     linkedin: 'https://www.linkedin.com/in/kishonithan-suntharalingam-2444012b7/',
-    email: '#',
+    email: 'e22193@eng.pdn.ac.lk',
   },
 ];
 
