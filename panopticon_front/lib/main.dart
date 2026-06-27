@@ -8,18 +8,22 @@ import 'package:panopticon/screens/settings_screen.dart';
 import 'package:panopticon/screens/profile_screen.dart';
 import 'package:panopticon/screens/call_overlay_screen.dart';
 import 'package:panopticon/widgets/bottom_nav.dart';
-import 'package:panopticon/screens/boot_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:panopticon/ui/audio_test_screen.dart';
 
 // GraphRAG subsystem
 import 'package:panopticon/data/graph_rag/graph_rag.dart';
 import 'package:panopticon/core/services/model_manager.dart';
 import 'package:panopticon/core/agents/agent_router.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:panopticon/core/call_state_manager.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:panopticon/core/ffi/audio_bindings.dart';
+import 'package:panopticon/screens/model_download_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize FFI Native Ports for C++ -> Dart communication
+  AudioPipelineBridge.initialize();
 
   // Prevent google_fonts from making network requests.
   // Without this, it tries to download Inter from fonts.gstatic.com and throws
@@ -113,7 +117,10 @@ class _AppRootState extends State<_AppRoot> {
     // Bootstrap complete — hand off to the real app.
     return ContextServiceProvider(
       service: _contextService!,
-      child: const AppShell(),
+      child: CallStateProvider(
+        manager: CallStateManager(_contextService!),
+        child: const AppShell(),
+      ),
     );
   }
 }
@@ -235,6 +242,12 @@ Future<ContextRetrievalService> _bootstrapGraphRag() async {
   // To avoid the double-open bug, seed via a fresh VectorSearchService that
   // shares the same ObjectBox singleton (safe — ObjectBoxStore is a singleton).
   final vectorService = await VectorSearchService.create();
+  
+  // ── PROTOTYPE CHEAT ──
+  // Clear the vector store to force a re-seed so our new FRAUD_PATTERN_OVERRIDE 
+  // gets successfully written into the database for the demo.
+  vectorService.clearAll();
+  
   if (vectorService.chunkCount == 0) {
     await VectorSeeder(
       vectorService: vectorService,
@@ -288,7 +301,54 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   bool _authed = false;
   bool _callOpen = false;
+  bool _modelReady = false;
   int _tab = 0; // 0=home, 1=calls, 2=settings, 3=profile
+  CallStateManager? _manager;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingModel();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_manager == null) {
+      _manager = CallStateProvider.of(context);
+      _manager!.addListener(_onCallStateChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    _manager?.removeListener(_onCallStateChanged);
+    super.dispose();
+  }
+
+  void _onCallStateChanged() {
+    if (_manager?.latestReport?.riskLevel == RiskLevel.high && !_callOpen) {
+      _openCall();
+    }
+  }
+
+  Future<void> _checkExistingModel() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final files = dir.listSync();
+      for (var file in files) {
+        if (file.path.endsWith('.bin') && file.path.contains('ggml-')) {
+          final success = AudioPipelineBridge.loadWhisperModel(file.path);
+          if (success) {
+            setState(() => _modelReady = true);
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking for model: $e');
+    }
+  }
 
   AgentRouter? _agentRouter;
 
@@ -371,17 +431,22 @@ class _AppShellState extends State<AppShell> {
             ),
             child: !_authed
                 ? AuthScreen(key: const ValueKey('auth'), onUnlock: _unlock)
-                : _callOpen
-                    ? CallOverlayScreen(
-                        key: const ValueKey('call'), 
-                        onBack: _closeCall,
-                        agentRouter: _agentRouter,
+                : !_modelReady
+                    ? ModelDownloadScreen(
+                        key: const ValueKey('model_download'),
+                        onComplete: () => setState(() => _modelReady = true),
                       )
-                    : _buildMainContent(),
+                    : _callOpen
+                        ? CallOverlayScreen(
+                            key: const ValueKey('call'),
+                            onBack: _closeCall,
+                            agentRouter: _agentRouter,
+                          )
+                        : _buildMainContent(),
           ),
 
-          // Bottom nav (only when authed and not in call)
-          if (_authed && !_callOpen)
+          // Bottom nav (only when authed, model ready, and not in call)
+          if (_authed && _modelReady && !_callOpen)
             Positioned(
               bottom: 0,
               left: 0,

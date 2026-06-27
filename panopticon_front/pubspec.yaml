@@ -24,7 +24,7 @@ dependencies:
   # File system path utilities
   path_provider: ^2.1.4
   path: ^1.9.0
-  dio: ^5.4.3
+  dio: ^5.9.2
 
   # ── GraphRAG: ObjectBox Vector Store ─────────────────────────────────────
   # ObjectBox core (includes the HNSW vector index)

@@ -59,8 +59,8 @@ class ContextAgent {
         Future.value(null),
     ]);
 
-    final ragContext   = results[0] as String?;
-    final graphContext = callerNumber != null ? results[1] as String? : null;
+    final ragContext   = results[0];
+    final graphContext = callerNumber != null ? results[1] : null;
 
     final prompt = PromptBuilder.buildContextPrompt(
       segments: segments,

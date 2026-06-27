@@ -155,4 +155,9 @@ class VectorSearchService {
 
   /// Returns the total number of chunks currently in the store.
   int get chunkCount => _store.documentChunkBox.count();
+
+  /// Clears the entire vector store (useful for debugging/prototyping).
+  void clearAll() {
+    _store.documentChunkBox.removeAll();
+  }
 }

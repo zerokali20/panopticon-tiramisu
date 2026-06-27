@@ -277,6 +277,10 @@ class ContextRetrievalService {
           'Caller is not registered in the local knowledge graph. '
               'Cannot verify identity.',
         ),
+      VerificationStatus.unknownInstitution when hasFraudSignal => (
+          RiskLevel.high,
+          'Claimed institution is unknown AND semantic content matches known fraud advisory patterns. High likelihood of vishing.',
+        ),
       VerificationStatus.unknownInstitution => (
           RiskLevel.medium,
           'Claimed institution "${graphResult.claimedEntity?.name ?? "Unknown"}" '
