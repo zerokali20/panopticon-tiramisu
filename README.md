@@ -49,6 +49,14 @@
 
 **Panopticon** is a fully **on-device, multi-agent AI system** for Android that acts as an objective, logical co-pilot during phone calls. It intercepts live call audio, transcribes it using Whisper.cpp STT, and passes the diarized transcript through a dual-LLM agent pipeline that detects voice phishing (vishing), deepfake audio impersonation, and social engineering attacks — all with **100% data sovereignty**.
 
+### What to Expect
+
+When you install and run Panopticon on your Android device:
+1. **First Launch (Model Setup)**: The app will authenticate you (via biometric Face ID/PIN) and immediately begin a **one-time download** of the required AI models (~8.8 GB total) directly to your device's internal storage. **Models are NOT preloaded in the APK to keep the app size small.**
+2. **Background Monitoring**: Once initialized, Panopticon runs silently in the background. It listens to incoming phone calls locally using the device microphone/call audio.
+3. **Live Threat Overlay**: During a call, if suspicious patterns are detected (e.g., someone asking for an OTP, urgency, claiming to be a bank), a floating UI overlay appears over your call screen. It displays a real-time transcript and a color-coded risk indicator (🟢 Safe, 🟡 Suspicious, 🔴 Threat).
+4. **Zero-Egress**: Absolutely **no audio or transcripts are sent to the cloud**. All processing, including speech-to-text and LLM reasoning, happens entirely on your phone's processor.
+
 > _"An objective evaluator that never panics, never doubts, and never leaves your device."_
 
 ---
@@ -380,6 +388,7 @@ cmake --build build_host --config Release --parallel
 ```
 
 
+### Run Code Generators
 
 ```bash
 cd panopticon_front
@@ -389,14 +398,13 @@ flutter pub get
 
 # Run all code generators (ObjectBox bindings + Drift DAOs)
 dart run build_runner build --delete-conflicting-outputs
-
 ```
 
 ---
 
-### Serving Models Locally
+### Serving Models Locally (For Development)
 
-On first launch the app downloads the GGUF model files (~8.8 GB). During development, serve them from your local machine to avoid slow repeated downloads:
+On first launch the app downloads the GGUF model files (~8.8 GB). During development, serve them from your local machine to avoid slow repeated downloads over the internet:
 
 ```bash
 #Step 1: Place the GGUF files in the models directory
@@ -435,13 +443,13 @@ flutter run -d <device-id>
 flutter run --release -d <device-id>
 ```
 
-> On first launch, the **Boot Screen** will stream and save the model files before handing off to the main app. This is a one-time step.
+> **Installation Workflow**: When you run the app on your device for the very first time, you will be greeted by the **Boot Screen**. This screen streams the required model files (listed below) directly to your device's internal storage and saves them. This is a one-time step. Once downloaded, the models remain on your device permanently.
 
 ---
 
 ## 🤖 Model Files
 
-The GGUF model files are **not bundled** in the APK. They are downloaded on first launch:
+To keep the initial APK install size small and comply with App Store size limits, the GGUF model files are **not bundled** inside the APK. They are downloaded directly to the device during the first app launch:
 
 | Agent | File | Size | Quantization | Source |
 |---|---|---|---|---|
