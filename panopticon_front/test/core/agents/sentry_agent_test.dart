@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:ffi' as ffi;
+import 'dart:io' show Platform;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:panopticon/core/agents/sentry_agent.dart';
@@ -172,9 +174,13 @@ void main() {
 /// FFI-dependent tests to be skipped gracefully instead of crashing.
 bool _nativeLibAvailable() {
   try {
-    // Attempt to import the FFI layer — if the DLL is missing it throws.
-    // We can't actually do this at test-declaration time, so we return true
-    // and let the test runner handle the DLL-missing exception as a skip.
+    if (Platform.isWindows) {
+      ffi.DynamicLibrary.open('llama_bridge.dll');
+    } else if (Platform.isLinux || Platform.isAndroid) {
+      ffi.DynamicLibrary.open('libllama_bridge.so');
+    } else {
+      ffi.DynamicLibrary.process();
+    }
     return true;
   } catch (_) {
     return false;

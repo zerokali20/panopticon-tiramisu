@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi' as ffi_lib;
 import 'dart:isolate';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -33,7 +36,29 @@ const String kSentryGbnf =
     'string ::= "\\"" ([^"\\\\] | "\\\\" ["\\\\/bfnrt])* "\\""\n'
     'ws ::= [ \\t\\n]*\n';
 
+bool _nativeLibAvailable() {
+  try {
+    if (Platform.isWindows) {
+      ffi_lib.DynamicLibrary.open('llama_bridge.dll');
+    } else if (Platform.isLinux || Platform.isAndroid) {
+      ffi_lib.DynamicLibrary.open('libllama_bridge.so');
+    } else {
+      ffi_lib.DynamicLibrary.process();
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 void main() {
+  if (!_nativeLibAvailable()) {
+    test('SKIPPED — llama_bridge.dll not found', () {
+      print('Skipping llama_bridge integration tests.');
+    });
+    return;
+  }
+
   // ─── LlamaFFI (low-level binding) tests ─────────────────────────────────────
 
   group('LlamaFFI – symbol loading', () {
@@ -55,7 +80,6 @@ void main() {
 
     test('T-DART-03  freeContext on null pointer does not crash', () {
       // Pass a zeroed pointer — the C layer must handle this gracefully
-      import 'dart:ffi' as ffi_lib;
       final nullHandle = ffi_lib.Pointer<ffi_lib.Opaque>.fromAddress(0);
       expect(() => ffi.freeContext(nullHandle), returnsNormally);
     });

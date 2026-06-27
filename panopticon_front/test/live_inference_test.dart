@@ -18,6 +18,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:ffi' as ffi;
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,6 +36,21 @@ final _contextModel = '$_repoRoot/models/context.gguf';
 
 bool get _modelsExist =>
     File(_sentryModel).existsSync() && File(_contextModel).existsSync();
+
+bool _nativeLibAvailable() {
+  try {
+    if (Platform.isWindows) {
+      ffi.DynamicLibrary.open('llama_bridge.dll');
+    } else if (Platform.isLinux || Platform.isAndroid) {
+      ffi.DynamicLibrary.open('libllama_bridge.so');
+    } else {
+      ffi.DynamicLibrary.process();
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
 
 // ── Sample transcripts ────────────────────────────────────────────────────────
 
@@ -140,8 +156,8 @@ Future<List<RiskAssessment>> _feedAndCollect(
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
-  // Guard: skip everything if models are not present on disk
-  if (!_modelsExist) {
+  // Guard: skip everything if models or native libraries are not present
+  if (!_modelsExist || !_nativeLibAvailable()) {
     test('SKIPPED — model files not found', () {
       print(
         '\n⚠  Skipping live inference tests.\n'

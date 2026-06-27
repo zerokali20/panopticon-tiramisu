@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ffi' as ffi;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:panopticon/core/agents/agent_router.dart';
@@ -7,7 +9,28 @@ import 'package:panopticon/core/agents/models/transcript_segment.dart';
 import 'package:panopticon/core/rag/rag_interface.dart';
 import 'package:panopticon/core/graph/graph_interface.dart';
 
+bool _nativeLibAvailable() {
+  try {
+    if (Platform.isWindows) {
+      ffi.DynamicLibrary.open('llama_bridge.dll');
+    } else if (Platform.isLinux || Platform.isAndroid) {
+      ffi.DynamicLibrary.open('libllama_bridge.so');
+    } else {
+      ffi.DynamicLibrary.process();
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 void main() {
+  if (!_nativeLibAvailable()) {
+    test('SKIPPED — llama_bridge.dll not found', () {
+      print('Skipping agent router integration tests.');
+    });
+    return;
+  }
   const kStubSentry  = 'C:/tmp/sentry_stub.gguf';
   const kStubContext = 'C:/tmp/context_stub.gguf';
 
