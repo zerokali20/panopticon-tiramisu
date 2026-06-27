@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:panopticon/theme/app_colors.dart';
 import 'package:panopticon/screens/auth_screen.dart';
 import 'package:panopticon/screens/home_screen.dart';
@@ -71,6 +72,11 @@ class _AppRootState extends State<_AppRoot> {
   /// The UI shows a loading screen until this completes.
   Future<void> _bootstrap() async {
     try {
+      await [
+        Permission.phone,
+        Permission.contacts,
+      ].request();
+
       final service = await _bootstrapGraphRag();
       if (mounted) {
         setState(() => _contextService = service);
@@ -363,6 +369,15 @@ class _AppShellState extends State<AppShell> {
     final grammarString = await rootBundle.loadString('assets/grammars/sentry_grammar.gbnf');
     final sentryPath = await modelManager.sentryModelPath;
     final contextPath = await modelManager.contextModelPath;
+    
+    // Auto-start microphone if simulating a call
+    final manager = CallStateProvider.of(context);
+    if (!manager.isMonitoring) {
+      final status = await Permission.microphone.request();
+      if (status.isGranted) {
+        await manager.startLoopback();
+      }
+    }
     
     setState(() {
       _agentRouter = AgentRouter.create(

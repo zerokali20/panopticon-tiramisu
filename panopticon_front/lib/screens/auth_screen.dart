@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/logo.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Auth screen — Face ID button + 6-digit PIN pad.
 /// Port of the React AuthScreen component.
@@ -25,8 +26,16 @@ class _AuthScreenState extends State<AuthScreen> {
     final next = _pin + k;
     setState(() => _pin = next);
     if (next.length == 6) {
-      Future.delayed(const Duration(milliseconds: 250), widget.onUnlock);
+      Future.delayed(const Duration(milliseconds: 250), _handleUnlock);
     }
+  }
+
+  Future<void> _handleUnlock() async {
+    await [
+      Permission.contacts,
+      Permission.phone,
+    ].request();
+    widget.onUnlock();
   }
 
   @override
@@ -94,64 +103,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
 
                   const SizedBox(height: 40),
-
-                  // Face ID button
-                  GestureDetector(
-                    onTap: widget.onUnlock,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: Colors.white.withValues(alpha: 0.05),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08)),
-                          ),
-                          child: Icon(
-                            Icons.face_retouching_natural_rounded,
-                            size: 28,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Use Face ID',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Recommended sign-in',
-                              style: GoogleFonts.inter(
-                                color: Colors.white.withValues(alpha: 0.40),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // PIN divider
-                  Text(
-                    'Or enter your PIN',
-                    style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.40),
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
 
                   // PIN dots
                   Row(

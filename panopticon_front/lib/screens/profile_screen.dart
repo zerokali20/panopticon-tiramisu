@@ -161,10 +161,19 @@ class ProfileScreen extends StatelessWidget {
                     final isLast = i == _rows.length - 1;
                     return Column(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
-                          child: Row(
+                        InkWell(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${r.$1} (Coming soon)'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            child: Row(
                             children: [
                               Expanded(
                                 child: Column(
@@ -190,6 +199,7 @@ class ProfileScreen extends StatelessWidget {
                                   color: Colors.white.withValues(alpha: 0.30)),
                             ],
                           ),
+                        ),
                         ),
                         if (!isLast)
                           Divider(

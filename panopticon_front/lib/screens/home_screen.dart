@@ -8,7 +8,9 @@ import '../data/mock_data.dart';
 import '../core/ffi/audio_bindings.dart';
 import '../core/call_state_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:panopticon/data/graph_rag/services/discrepancy_report.dart';
+import 'package:call_log/call_log.dart';
 
 /// Home screen — status card, quick stats, recent calls list.
 /// Port of React HomeScreen component.
@@ -25,6 +27,41 @@ class _HomeScreenState extends State<HomeScreen> {
   // null = not yet tested; int = result from C++ bridge
   int? _bridgeResult;
   bool _bridgeTesting = false;
+  List<CallRecord> _realCalls = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCalls();
+  }
+
+  Future<void> _loadCalls() async {
+    try {
+      final entries = await CallLog.get();
+      final List<CallRecord> loaded = [];
+      for (var entry in entries.take(3)) {
+        final risk = (entry.duration != null && entry.duration! > 0) ? 'safe' : 'med';
+        final dt = DateTime.fromMillisecondsSinceEpoch(entry.timestamp ?? 0);
+        final dateStr = '${dt.month}/${dt.day}';
+        final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+        
+        loaded.add(CallRecord(
+          name: (entry.name != null && entry.name!.isNotEmpty) ? entry.name! : 'Unknown',
+          number: entry.number ?? 'Private',
+          date: dateStr,
+          time: timeStr,
+          duration: '${entry.duration}s',
+          risk: risk,
+          confidence: risk == 'safe' ? 95 : 60,
+        ));
+      }
+      setState(() {
+        _realCalls = loaded;
+      });
+    } catch (e) {
+      // Ignore
+    }
+  }
 
   Future<void> _testBridge() async {
     setState(() => _bridgeTesting = true);
@@ -38,88 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildHighlightedTranscript(String text) {
-    if (text.isEmpty) {
-      return Text(
-        'Listening for audio...',
-        style: GoogleFonts.inter(
-          color: Colors.white,
-          fontSize: 13,
-          fontStyle: FontStyle.italic,
-        ),
-      );
-    }
 
-    final sensitiveTerms = [
-      'otp', 'frozen', 'unauthorized', 'anydesk', 'safe account',
-      'underwriting department', 'interest rate reduction', 'limited time offer'
-    ];
-
-    // Build regex to match any of the terms (case-insensitive)
-    final pattern = sensitiveTerms.map((t) => RegExp.escape(t)).join('|');
-    final regex = RegExp('($pattern)', caseSensitive: false);
-
-    final spans = <TextSpan>[];
-    int lastMatchEnd = 0;
-
-    for (final match in regex.allMatches(text)) {
-      if (match.start > lastMatchEnd) {
-        spans.add(TextSpan(
-          text: text.substring(lastMatchEnd, match.start),
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 13,
-            fontStyle: FontStyle.italic,
-          ),
-        ));
-      }
-      spans.add(TextSpan(
-        text: match.group(0),
-        style: GoogleFonts.inter(
-          color: Colors.redAccent,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          fontStyle: FontStyle.italic,
-        ),
-      ));
-      lastMatchEnd = match.end;
-    }
-
-    if (lastMatchEnd < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(lastMatchEnd),
-        style: GoogleFonts.inter(
-          color: Colors.white,
-          fontSize: 13,
-          fontStyle: FontStyle.italic,
-        ),
-      ));
-    }
-
-    return RichText(
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: 'Transcript: "',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          ...spans,
-          TextSpan(
-            text: '"',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +112,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              const _IconBtn(icon: Icons.search_rounded),
+              Row(
+                children: [
+                  const _DialerBtn(),
+                  const SizedBox(width: 8),
+                  const _IconBtn(icon: Icons.search_rounded),
+                ],
+              ),
             ],
           ),
         ),
@@ -170,73 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _StatusCard(onCall: onCall),
               const SizedBox(height: 28),
 
-              // Live Call Widget
-              Builder(
-                builder: (context) {
-                  try {
-                    final state = CallStateProvider.of(context);
-                    if (!state.isMonitoring) return const SizedBox.shrink();
 
-                    final riskColor = state.latestReport?.riskLevel == RiskLevel.high
-                        ? Colors.redAccent
-                        : state.latestReport?.riskLevel == RiskLevel.medium
-                            ? Colors.orangeAccent
-                            : AppColors.emerald;
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 28),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: riskColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: riskColor.withValues(alpha: 0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.record_voice_over, color: riskColor, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                'LIVE CALL ANALYSIS',
-                                style: GoogleFonts.inter(
-                                  color: riskColor,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _buildHighlightedTranscript(state.fullTranscript),
-                          if (state.latestReport != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              'GraphRAG Verdict: ${state.latestReport!.riskLevel.name.toUpperCase()}',
-                              style: GoogleFonts.inter(
-                                color: riskColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              state.latestReport!.riskRationale,
-                              style: GoogleFonts.inter(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    );
-                  } catch (e) {
-                    return const SizedBox.shrink();
-                  }
-                },
-              ),
 
               // Section header
               Row(
@@ -264,9 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
                 child: Column(
-                  children: List.generate(recentCalls.length, (i) {
-                    final c = recentCalls[i];
-                    final isLast = i == recentCalls.length - 1;
+                  children: List.generate(_realCalls.length, (i) {
+                    final c = _realCalls[i];
+                    final isLast = i == _realCalls.length - 1;
                     return Column(
                       children: [
                         _RecentCallRow(call: c),
@@ -366,36 +262,10 @@ class _StatusCard extends StatelessWidget {
                         height: 1.3,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text(
-                          'View privacy center',
-                          style: GoogleFonts.inter(
-                            color: Colors.white.withValues(alpha: 0.70),
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.chevron_right_rounded,
-                            size: 14,
-                            color: Colors.white.withValues(alpha: 0.70)),
-                      ],
-                    ),
                   ],
                 ),
               ),
               const PanopticonLogo(size: 36),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
-          const SizedBox(height: 16),
-          const Row(
-            children: [
-              _Stat(value: '47', label: 'Blocked'),
-              _Stat(value: '312', label: 'Analyzed'),
-              _Stat(value: '30d', label: 'Window'),
             ],
           ),
           const SizedBox(height: 4),
@@ -413,7 +283,7 @@ class _StatusCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Preview live call overlay',
+                    'Simulate call',
                     style: GoogleFonts.inter(
                       color: AppColors.background,
                       fontSize: 13,
@@ -534,6 +404,34 @@ class _IconBtn extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.60)),
+    );
+  }
+}
+
+class _DialerBtn extends StatelessWidget {
+  const _DialerBtn();
+
+  Future<void> _launchDialer() async {
+    final Uri url = Uri(scheme: 'tel', path: '');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _launchDialer,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.05),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Icon(Icons.dialpad_rounded, size: 16, color: Colors.white.withValues(alpha: 0.60)),
+      ),
     );
   }
 }

@@ -57,7 +57,7 @@ class SentryAgent {
     required this.modelPath,
     this.grammarString,
     this.callerNumber,
-    this.inferenceIntervalSegments = 2,
+    this.inferenceIntervalSegments = 1,
   });
 
   /// Live stream of [RiskAssessment] objects. Subscribe in the UI widget.

@@ -97,7 +97,7 @@ class AgentRouter {
     RagInterface? rag,
     GraphInterface? graph,
     double contextActivationThreshold = 0.75,
-    int inferenceIntervalSegments = 2,
+    int inferenceIntervalSegments = 1,
   }) {
     final sentry = SentryAgent(
       modelPath: sentryModelPath,

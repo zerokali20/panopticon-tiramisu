@@ -100,7 +100,7 @@ class AudioCaptureService : Service() {
         )
 
         audioRecord = AudioRecord.Builder()
-            .setAudioPlaybackCaptureConfig(config)
+            .setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
             .setAudioFormat(format)
             .setBufferSizeInBytes(minBufferSize * 2)
             .build()

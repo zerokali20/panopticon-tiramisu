@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../widgets/risk_dot.dart';
 import '../data/mock_data.dart';
+import 'package:call_log/call_log.dart';
 
 /// Calls screen — threat log with filter chips.
 /// Port of React CallsScreen component.
@@ -15,6 +16,43 @@ class CallsScreen extends StatefulWidget {
 
 class _CallsScreenState extends State<CallsScreen> {
   String _filter = 'all'; // 'all' | 'high' | 'med' | 'safe'
+  List<CallRecord> _realCalls = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCalls();
+  }
+
+  Future<void> _loadCalls() async {
+    try {
+      final entries = await CallLog.get();
+      final List<CallRecord> loaded = [];
+      for (var entry in entries.take(30)) {
+        final risk = (entry.duration != null && entry.duration! > 0) ? 'safe' : 'med';
+        final dt = DateTime.fromMillisecondsSinceEpoch(entry.timestamp ?? 0);
+        final dateStr = '${dt.month}/${dt.day}';
+        final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+        
+        loaded.add(CallRecord(
+          name: (entry.name != null && entry.name!.isNotEmpty) ? entry.name! : 'Unknown',
+          number: entry.number ?? 'Private',
+          date: dateStr,
+          time: timeStr,
+          duration: '${entry.duration}s',
+          risk: risk,
+          confidence: risk == 'safe' ? 95 : 60,
+        ));
+      }
+      setState(() {
+        _realCalls = loaded;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() => _loading = false);
+    }
+  }
 
   static const _filters = [
     ('all', 'All'),
@@ -23,8 +61,10 @@ class _CallsScreenState extends State<CallsScreen> {
     ('safe', 'Safe'),
   ];
 
-  List<CallRecord> get _filtered =>
-      _filter == 'all' ? allCalls : allCalls.where((c) => c.risk == _filter).toList();
+  List<CallRecord> get _filtered {
+    final src = _realCalls.isNotEmpty ? _realCalls : allCalls;
+    return _filter == 'all' ? src : src.where((c) => c.risk == _filter).toList();
+  }
 
   Color _riskColor(String risk) => switch (risk) {
         'high' => AppColors.riskHigh,
@@ -50,7 +90,7 @@ class _CallsScreenState extends State<CallsScreen> {
                       color: Colors.white.withValues(alpha: 0.40), fontSize: 12)),
               const SizedBox(height: 2),
               Text(
-                '${allCalls.length} calls intercepted',
+                '${_filtered.length} calls intercepted',
                 style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 22,
@@ -109,28 +149,30 @@ class _CallsScreenState extends State<CallsScreen> {
 
         // List
         Expanded(
-          child: _filtered.isEmpty
-              ? Center(
-                  child: Text(
-                    'No calls match this filter.',
-                    style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: 0.40),
-                        fontSize: 12),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
-                  itemCount: _filtered.length,
-                  separatorBuilder: (_, __) => Divider(
-                    height: 1,
-                    color: Colors.white.withValues(alpha: 0.04),
-                    indent: 16,
-                    endIndent: 16,
-                  ),
-                  itemBuilder: (context, i) {
-                    final c = _filtered[i];
-                    return Container(
-                      decoration: i == 0
+          child: _loading 
+              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              : _filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No calls match this filter.',
+                        style: GoogleFonts.inter(
+                            color: Colors.white.withValues(alpha: 0.40),
+                            fontSize: 12),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+                      itemCount: _filtered.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: Colors.white.withValues(alpha: 0.04),
+                        indent: 16,
+                        endIndent: 16,
+                      ),
+                      itemBuilder: (context, i) {
+                        final c = _filtered[i];
+                        return Container(
+                          decoration: i == 0
                           ? BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.02),
                               borderRadius: const BorderRadius.vertical(

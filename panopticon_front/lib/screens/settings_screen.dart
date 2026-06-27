@@ -261,8 +261,17 @@ class _LinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return InkWell(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Opening $label... (Coming soon)'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Container(
@@ -295,6 +304,7 @@ class _LinkRow extends StatelessWidget {
           Icon(Icons.chevron_right_rounded,
               size: 16, color: Colors.white.withValues(alpha: 0.30)),
         ],
+      ),
       ),
     );
   }

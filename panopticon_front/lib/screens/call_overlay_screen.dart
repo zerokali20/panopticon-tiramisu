@@ -7,6 +7,8 @@ import '../widgets/toggle_switch.dart';
 import '../core/agents/agent_router.dart';
 import '../core/agents/models/risk_assessment.dart';
 import '../core/agents/models/transcript_segment.dart';
+import '../core/call_state_manager.dart';
+import '../core/ffi/audio_bindings.dart';
 
 /// Live call overlay screen.
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
 
   // ── Agent subscription ──────────────────────────────────────────────────────
   StreamSubscription<RiskAssessment>? _agentSub;
+  StreamSubscription<String>? _transcriptSub;
 
   // ── Demo mode (no model) ────────────────────────────────────────────────────
   Timer? _demoTimer;
@@ -74,6 +77,28 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
     if (widget.agentRouter != null) {
       _agentSub = widget.agentRouter!.assessments.listen((a) {
         if (mounted) setState(() => _assessment = a);
+      });
+
+      // Pass existing transcript context
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final state = CallStateProvider.of(context);
+        if (state.fullTranscript.trim().isNotEmpty) {
+           widget.agentRouter!.addSegment(TranscriptSegment.caller(
+             state.fullTranscript,
+             timestampMs: DateTime.now().millisecondsSinceEpoch,
+           ));
+        }
+      });
+
+      // Listen for incoming live speech segments
+      _transcriptSub = AudioPipelineBridge.transcriptStream.listen((text) {
+        if (text.trim().isEmpty) return;
+        if (text.contains('[BLANK_AUDIO]')) return;
+        widget.agentRouter!.addSegment(TranscriptSegment.caller(
+          text,
+          timestampMs: DateTime.now().millisecondsSinceEpoch,
+        ));
       });
     } else {
       // Demo escalation — simulates a real call without model files
@@ -100,6 +125,7 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
     _clockTick?.cancel();
     _demoTimer?.cancel();
     _agentSub?.cancel();
+    _transcriptSub?.cancel();
     _callTimer.stop();
     super.dispose();
   }
@@ -108,17 +134,113 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
       _assessment.threatDetected &&
       _assessment.level == RiskLevel.high;
 
+  Widget _buildHighlightedTranscript(String text) {
+    if (text.isEmpty) {
+      return Text(
+        'Listening for audio...',
+        style: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 13,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
+    final sensitiveTerms = [
+      'otp', 'frozen', 'unauthorized', 'anydesk', 'safe account',
+      'underwriting department', 'interest rate reduction', 'limited time offer'
+    ];
+
+    final pattern = sensitiveTerms.map((t) => RegExp.escape(t)).join('|');
+    final regex = RegExp('($pattern)', caseSensitive: false);
+
+    final spans = <TextSpan>[];
+    int lastMatchEnd = 0;
+
+    for (final match in regex.allMatches(text)) {
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(
+          text: text.substring(lastMatchEnd, match.start),
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+          ),
+        ));
+      }
+      spans.add(TextSpan(
+        text: match.group(0),
+        style: GoogleFonts.inter(
+          color: Colors.redAccent,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          fontStyle: FontStyle.italic,
+        ),
+      ));
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastMatchEnd),
+        style: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 13,
+          fontStyle: FontStyle.italic,
+        ),
+      ));
+    }
+
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: 'Transcript: "',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          ...spans,
+          TextSpan(
+            text: '"',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
+    final state = CallStateProvider.of(context);
 
     return Stack(
       children: [
-        // Caller info behind overlay
+        // Background
+        Positioned.fill(
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF0A0D1C), Color(0xFF060812)],
+              ),
+            ),
+          ),
+        ),
+
+        // Caller Info & Center Controls
         Positioned.fill(
           child: Column(
             children: [
-              SizedBox(height: top + 80),
+              SizedBox(height: top + 40),
               Text('On call · $_callDuration',
                   style: GoogleFonts.inter(
                       color: Colors.white.withValues(alpha: 0.40), fontSize: 11)),
@@ -145,6 +267,63 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                 child: Icon(Icons.person_outline_rounded,
                     size: 48, color: Colors.white.withValues(alpha: 0.30)),
               ),
+              const SizedBox(height: 30),
+              
+              // LIVE CALL ANALYSIS INJECTION
+              if (state.isMonitoring)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.record_voice_over, color: AppColors.amber, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'LIVE CALL ANALYSIS',
+                              style: GoogleFonts.inter(
+                                color: AppColors.amber,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildHighlightedTranscript(state.fullTranscript),
+                        if (state.latestReport != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'GraphRAG Verdict: ${state.latestReport!.riskLevel.name.toUpperCase()}',
+                            style: GoogleFonts.inter(
+                              color: AppColors.amber,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            state.latestReport!.riskRationale,
+                            style: GoogleFonts.inter(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.only(bottom: 80),
@@ -174,6 +353,25 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
                       ),
                     );
                   }).toList(),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 120),
+                child: GestureDetector(
+                  onTap: () {
+                    CallStateProvider.of(context).stopLoopback();
+                    widget.onBack();
+                  },
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.rose,
+                    ),
+                    child: const Icon(Icons.call_end_rounded,
+                        size: 32, color: Colors.white),
+                  ),
                 ),
               ),
             ],
