@@ -271,60 +271,62 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
               
               // LIVE CALL ANALYSIS INJECTION
               if (state.isMonitoring)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.record_voice_over, color: AppColors.amber, size: 18),
-                            const SizedBox(width: 8),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.record_voice_over, color: AppColors.amber, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                'LIVE CALL ANALYSIS',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.amber,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildHighlightedTranscript(state.fullTranscript),
+                          if (state.latestReport != null) ...[
+                            const SizedBox(height: 12),
                             Text(
-                              'LIVE CALL ANALYSIS',
+                              'GraphRAG Verdict: ${state.latestReport!.riskLevel.name.toUpperCase()}',
                               style: GoogleFonts.inter(
                                 color: AppColors.amber,
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              state.latestReport!.riskRationale,
+                              style: GoogleFonts.inter(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
-                        ),
-                        const SizedBox(height: 12),
-                        _buildHighlightedTranscript(state.fullTranscript),
-                        if (state.latestReport != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'GraphRAG Verdict: ${state.latestReport!.riskLevel.name.toUpperCase()}',
-                            style: GoogleFonts.inter(
-                              color: AppColors.amber,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            state.latestReport!.riskRationale,
-                            style: GoogleFonts.inter(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-                
-              const Spacer(),
+                )
+              else
+                const Spacer(),
               Padding(
                 padding: const EdgeInsets.only(bottom: 80),
                 child: Row(
@@ -379,11 +381,13 @@ class _CallOverlayScreenState extends State<CallOverlayScreen> {
         ),
 
         // Dimming overlay — darkens to red-tint on high-risk
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 600),
-          color: _isHighRisk
-              ? const Color(0x8C14050A)
-              : const Color(0x400A0D1C),
+        IgnorePointer(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 600),
+            color: _isHighRisk
+                ? const Color(0x8C14050A)
+                : const Color(0x400A0D1C),
+          ),
         ),
 
         // Back button
