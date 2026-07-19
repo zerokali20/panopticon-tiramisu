@@ -285,7 +285,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.7 }}
             style={{
-              fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
+              fontSize: 'clamp(0.85rem, 4vw, 1.4rem)',
               color: 'var(--text-secondary)',
               maxWidth: 620,
               lineHeight: 1.6,
