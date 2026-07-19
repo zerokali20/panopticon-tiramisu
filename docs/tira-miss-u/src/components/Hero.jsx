@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion';
+import winningPhoto from '../assets/Aurora (2) (1).png';
+import secondPhoto from '../assets/second.jpeg';
+import thirdPhoto from '../assets/third.jpeg';
+import fourthPhoto from '../assets/fourth.jpeg';
 
+// The floating photo animation was removed.
+// We now use a cross-fading background layer that cycles through the images.
+
+// ── Add more photos here by importing them and adding them to the array below ──
+const BACKGROUND_IMAGES = [
+  winningPhoto,
+  secondPhoto,
+  thirdPhoto,
+  fourthPhoto,
+];
 // Panopticon Eye SVG logo
 function PanopticonLogo({ size = 120 }) {
   return (
@@ -98,10 +112,10 @@ function PanopticonLogo({ size = 120 }) {
 }
 
 // Animated waveform
-function Waveform() {
+export function Waveform({ scale = 1 }) {
   const bars = Array.from({ length: 40 }, (_, i) => i);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 50, opacity: 0.5 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 50, opacity: 0.5, transform: `scale(${scale})`, transformOrigin: 'left center' }}>
       {bars.map((i) => (
         <div
           key={i}
@@ -136,7 +150,54 @@ function FloatingOrb({ color, size, top, left, delay = 0 }) {
   );
 }
 
+// Premium SaaS-style word reveal animation
+function PremiumRevealText({ parts, delay = 0 }) {
+
+  return (
+    <motion.span
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 1 },
+        visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: delay } }
+      }}
+    >
+      {parts.map((part, pIdx) => {
+        // Split text into words while keeping the whitespace as separate words to preserve layout
+        const words = part.text.split(/(\s+)/);
+        return (
+          <span key={pIdx} className={part.className}>
+            {words.map((word, wIdx) => (
+              <motion.span
+                key={`${pIdx}-${wIdx}`}
+                variants={{
+                  hidden: { opacity: 0, y: 12, filter: 'blur(8px)' },
+                  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.5, ease: [0.2, 0.65, 0.3, 0.9] } }
+                }}
+                style={{ display: 'inline-block', whiteSpace: 'pre' }}
+              >
+                {word}
+              </motion.span>
+            ))}
+          </span>
+        );
+      })}
+    </motion.span>
+  );
+}
+
 export default function Hero() {
+  const [bgIndex, setBgIndex] = useState(0);
+
+  // Cycle through background images every 8 seconds
+  useEffect(() => {
+    if (BACKGROUND_IMAGES.length <= 1) return;
+    const interval = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 600], [0, 120]);
   const opacity = useTransform(scrollY, [0, 400], [1, 0]);
@@ -163,29 +224,32 @@ export default function Hero() {
         background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(56,189,248,0.07) 0%, transparent 60%), var(--bg-deep)',
       }}
     >
-      {/* Grid background */}
-      <div className="grid-bg" style={{ position: 'absolute', inset: 0, opacity: 0.5 }} />
+      {/* ── Background Image Layer (Cross-fading Slideshow) ── */}
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={bgIndex}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url("${BACKGROUND_IMAGES[bgIndex]}")`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center center',
+            zIndex: 0,
+          }}
+          initial={{ opacity: 0, scale: 1.0 }}
+          animate={{ opacity: 0.25, scale: 1.03 }}
+          exit={{ opacity: 0, scale: 1.0 }}
+          transition={{
+            opacity: { duration: 1.5, ease: 'easeInOut' },
+            scale: { duration: 10, ease: 'linear' },
+          }}
+        />
+      </AnimatePresence>
 
-      {/* ── Background Panopticon Logo (parallax, centered, behind everything) ── */}
-      <motion.div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          marginLeft: -260,
-          marginTop: -260,
-          y: bgLogoY,
-          opacity: bgLogoOpacity,
-          scale: bgLogoScale,
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-        className="animate-spin-slow"
-      >
-        <div style={{ filter: 'blur(2px)' }}>
-          <PanopticonLogo size={520} />
-        </div>
-      </motion.div>
+      {/* Grid background (Overlay to give texture) */}
+      <div className="grid-bg" style={{ position: 'absolute', inset: 0, opacity: 0.5, zIndex: 0 }} />
+
 
       {/* Atmospheric orbs */}
       <FloatingOrb color="blue" size={600} top="-10%" left="60%" delay={0} />
@@ -200,7 +264,7 @@ export default function Hero() {
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 32 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 32, marginTop: '100px' }}>
 
           {/* Competition badge */}
           <motion.div
@@ -213,38 +277,7 @@ export default function Hero() {
           </motion.div>
 
 
-          {/* Title */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <h1 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(3.5rem, 10vw, 7rem)',
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              lineHeight: 0.95,
-              background: 'linear-gradient(135deg, #f0f4ff 0%, #38bdf8 40%, #a855f7 80%, #f0f4ff 100%)',
-              backgroundSize: '200% 200%',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              animation: 'shimmer 4s linear infinite',
-              marginBottom: 4,
-            }}>
-              PANOPTICON
-            </h1>
-          </motion.div>
 
-          {/* Waveform */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 0.6 }}
-          >
-            <Waveform />
-          </motion.div>
 
           {/* Tagline */}
           <motion.p
@@ -258,12 +291,21 @@ export default function Hero() {
               lineHeight: 1.6,
               fontWeight: 300,
               letterSpacing: '0.01em',
+              minHeight: '80px', // Prevent layout shift while typing
             }}
           >
-            Real-time AI defense against{' '}
-            <span className="text-neon-blue">voice phishing</span>{' '}
-            &amp; <span className="text-neon-violet">deepfake audio</span>.{' '}
-            On-device. Private. Always-on.
+            <PremiumRevealText 
+              delay={1.0} 
+              parts={[
+                { text: "Real-time AI defense against", className: "" },
+                { text: " ", className: "" },
+                { text: "voice phishing", className: "text-neon-blue" },
+                { text: " & ", className: "" },
+                { text: "deepfake audio", className: "text-neon-violet" },
+                { text: ".", className: "" },
+                { text: " On-device. Private. Always-on.", className: "" },
+              ]}
+            />
           </motion.p>
 
           {/* CTA buttons */}
@@ -321,11 +363,17 @@ export default function Hero() {
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               fontFamily: 'var(--font-ui)',
+              minHeight: '20px', // Prevent layout shift
             }}
           >
-            By <span style={{ color: 'var(--accent-blue)' }}>Team Tira-Miss-U</span>
-            {' · '}
-            University of Peradeniya
+            <PremiumRevealText 
+              delay={1.5} 
+              parts={[
+                { text: "By ", className: "" },
+                { text: "Team Tira-Miss-U", className: "text-neon-blue" },
+                { text: " · University of Peradeniya", className: "" },
+              ]}
+            />
           </motion.p>
         </div>
       </motion.div>

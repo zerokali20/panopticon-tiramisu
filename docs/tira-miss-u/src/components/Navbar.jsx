@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Waveform } from './Hero';
 
 const navLinks = [
   { label: 'About', id: 'about' },
@@ -109,6 +110,9 @@ export default function Navbar() {
             }}>
               Panopticon
             </span>
+            <div style={{ marginLeft: 4 }}>
+              <Waveform scale={0.4} />
+            </div>
           </button>
 
           {/* Desktop nav links */}
